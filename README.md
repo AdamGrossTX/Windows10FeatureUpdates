@@ -24,5 +24,6 @@ Powershell.exe -ExecutionPolicy ByPass -File Copy-FUFiles.PS1 -RemoveOnly
 4. Create a new SCCM Configuration Item and BaseLine using the Update-SetupConfigCI.ps1 script contents
 5. Be sure to set Remediate=$True for the Remediation script in the CI.
 6. Deploy the CI and Application to your target devices, install/run the app and CI, then launch your Feature Update.
+7. Create another CI to run the Custom-WMIClass.ps1 contents. Then the new CM_SetupDiag class into your SCCM Client Settings Hardware Inventory per https://docs.microsoft.com/en-us/sccm/core/clients/manage/inventory/extend-hardware-inventory#BKMK_Add
 
 # Blog Post Coming...
