@@ -21,7 +21,7 @@ $OutputPathRoot = "."
 
 $ScriptsToGen = @{
     "failure" = "$($OutputPathRoot)\Update"
-    "ErrorHandler" = "$($OutputPathRoot)\Scripts"
+    #"ErrorHandler" = "$($OutputPathRoot)\Scripts" #Not going to export this one for now since I don't have anything new for it to do. Failure.cmd will do the same work for now. This is used for post-rollback.
     "SetupComplete" = "$($OutputPathRoot)\Scripts"
 }
 

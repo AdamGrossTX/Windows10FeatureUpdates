@@ -54,12 +54,20 @@ Param (
             "DiagnosticPrompt"="Enable"
             "PKey"="NPPR9-FWDCX-D2C8J-H872K-2YT43"
             "PostOOBE"="C:\~FUTemp\Scripts\SetupComplete.cmd"
-            "PostRollBack"="C:\~FUTemp\Scripts\ErrorHandler.cmd"
-            "PostRollBackContext"="System"
+            #"PostRollBack"="C:\~FUTemp\Scripts\ErrorHandler.cmd"
+            #"PostRollBackContext"="System"
             "CopyLogs"="\\CM01\FeatureUpdateLogs$\FailedFULogs\$($ENV:COMPUTERNAME)" #Change this to your network path that EVERYONE has write access to. This will likely run under local System so it needs to be wide open.
+            #"Drivers"="" #Consider adding drivers if we need it in the future
         }
     },
-    [System.Collections.Specialized.OrderedDictionary]$RemoveSettings,
+    [System.Collections.Specialized.OrderedDictionary]$RemoveSettings = [ordered]@{
+        "SetupConfig" = [ordered]@{
+            "PostOOBE"=$null
+            "PostRollBack"=$null
+            "PostRollBackContext"=$null
+            "Drivers"=$null
+        }
+    },
     [string]$SourceIniFile = "$($env:SystemDrive)\Users\Default\AppData\Local\Microsoft\Windows\WSUS\SetupConfig.ini",
     [string]$DestIniFile,
     [switch]$Remediate=$True, #Set to $False for the CI Rule but set to $True for the remediation script.

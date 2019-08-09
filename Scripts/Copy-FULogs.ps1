@@ -29,8 +29,6 @@
        
 #>
 
-
-
 [cmdletbinding()]
 param (
     [string]$NetworkLogPath = "\\CM01\FeatureUpdateLogs$",
@@ -50,46 +48,31 @@ param (
 
 #region main ########################
 $main = {
+
     #cleanup any existing logs
     Remove-Item $TranscriptPath -Force -recurse -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
     Start-Transcript -Path $TranscriptPath -Force -Append -NoClobber -ErrorAction Continue
 
-    #Variables
-    $DateString = Get-Date -Format yyyyMMdd_HHmmss
-    $IncompletePantherLogPath = "c:\`$WINDOWS.~BT\Sources\Panther"
-    $CompletedPantherLogPath = "c:\Windows\Panther"
-    $ResultsXMLPath = Join-Path -Path $LocalLogRoot -ChildPath "FUResults.XML"
-    #Check to see if panther log exists
-    If(Test-Path -Path $IncompletePantherLogPath -ErrorAction SilentlyContinue) {
-        #If this path exists, the FU likely failed
-        $PantherLogPath = $IncompletePantherLogPath
-    }
-    Else {
-        $PantherLogPath = $CompletedPantherLogPath
-    }
+    Try {
 
+        #Variables
+        $DateString = Get-Date -Format yyyyMMdd_HHmmss
+        $IncompletePantherLogPath = "c:\`$WINDOWS.~BT\Sources\Panther"
+        $CompletedPantherLogPath = "c:\Windows\Panther"
+        $ResultsXMLPath = Join-Path -Path $LocalLogRoot -ChildPath "FUResults.XML"
+        #Check to see if panther log exists
+        If(Test-Path -Path $IncompletePantherLogPath -ErrorAction SilentlyContinue) {
+            #If this path exists, the FU likely failed
+            $PantherLogPath = $IncompletePantherLogPath
+        }
+        Else {
+            $PantherLogPath = $CompletedPantherLogPath
+        }
 
-    $SourcePath1 = "c:\Windows\Logs\MoSetup"
-    $DestPath1 = $LocalLogRoot
-    $DestChild1 = "MoSetup"
+        #Run SetupDiag and Parse Results
+        $Status = "Unknown"
 
-    $SourcePath2 = "c:\Windows\Logs\DISM"
-    $DestPath2 = $LocalLogRoot
-    $DestChild2 = "DISM"
-
-    $SourcePath3 = $PantherLogPath
-    $DestPath3 = $LocalLogRoot
-    $DestPath3File1 = "setupact.log"
-    $DestPath3File2 = "setuperr.log"
-
-    $SourcePath4 = "C:\Windows\CCM\Logs"
-    $DestPath4 = $LocalLogRoot
-    $DestPath4File1 = "FU-*.Log"
-
-    #Run SetupDiag and Parse Results
-    $Status = "Unknown"
-
-    $Status = 
+        $Status = 
         If($SkipSetupDiag.IsPresent) {
             "SkippedSetupDiag"
         }
@@ -107,29 +90,53 @@ $main = {
             }
         }
 
-    $OSInfo = Get-CIMInstance -Class Win32_OperatingSystem
-    Write-Host "OSInfo"
-    Write-Host "BuildNumber: $($OSInfo.BuildNumber)"
-    Write-Host "SerialNumber: $($OSInfo.SerialNumber)"
-    Write-Host "Version: $($OSInfo.Version)"
+        $SourcePath1 = "c:\Windows\Logs\MoSetup"
+        $SourcePath2 = "c:\Windows\Logs\DISM"
+        $SourcePath3 = $PantherLogPath
 
-    Write-Host "Panther Log Path : $($PantherLogPath)"
-    Write-Host "Setting status to: $($Status)"
-    Write-Host "SystemRoot : $($Env:SystemRoot)\logs\DISM"
-    Write-Host "Local Log Path : $($LocalLogRoot)"
-    Write-Host "Computername : $($ENV:COMPUTERNAME)"
+        $SourcePath4 = "C:\Windows\CCM\Logs"
+
+        $DestPath1 = $LocalLogRoot
+        $DestChild1 = "MoSetup"
+    
+        $DestPath2 = $LocalLogRoot
+        $DestChild2 = "DISM"
+
+        $DestPath3 = $LocalLogRoot
+        $DestPath3File1 = "setupact.log"
+        $DestPath3File2 = "setuperr.log"
+
+        $DestPath4 = $LocalLogRoot
+        $DestPath4File1 = "FU-*.Log"
+        
+        $OSInfo = Get-CIMInstance -Class Win32_OperatingSystem
+        Write-Host "OSInfo"
+        Write-Host "BuildNumber: $($OSInfo.BuildNumber)"
+        Write-Host "SerialNumber: $($OSInfo.SerialNumber)"
+        Write-Host "Version: $($OSInfo.Version)"
+
+        Write-Host "Panther Log Path : $($PantherLogPath)"
+        Write-Host "Setting status to: $($Status)"
+        Write-Host "SystemRoot : $($Env:SystemRoot)\logs\DISM"
+        Write-Host "Local Log Path : $($LocalLogRoot)"
+        Write-Host "Computername : $($ENV:COMPUTERNAME)"
       
-    ProcessContent -SourcePath $SourcePath1 -DestPath $DestPath1 -DestChildFolder $DestChild1 -RemoveExisting
-    ProcessContent -SourcePath $SourcePath2 -DestPath $DestPath2 -DestChildFolder $DestChild2 -RemoveExisting
-    ProcessContent -SourcePath $SourcePath3 -DestPath $DestPath3 -FileName $DestPath3File1 -RemoveExisting 
-    ProcessContent -SourcePath $SourcePath3 -DestPath $DestPath3 -FileName $DestPath3File2 -RemoveExisting
-    ProcessContent -SourcePath $SourcePath4 -DestPath $DestPath4 -FileName $DestPath4File1 -RemoveExisting
+        ProcessContent -SourcePath $SourcePath1 -DestPath $DestPath1 -DestChildFolder $DestChild1 -RemoveLevel Child -ErrorAction Continue
+        ProcessContent -SourcePath $SourcePath2 -DestPath $DestPath2 -DestChildFolder $DestChild2 -RemoveLevel Child -ErrorAction Continue
+        ProcessContent -SourcePath $SourcePath3 -DestPath $DestPath3 -FileName $DestPath3File1 -RemoveLevel File -ErrorAction Continue
+        ProcessContent -SourcePath $SourcePath3 -DestPath $DestPath3 -FileName $DestPath3File2 -RemoveLevel File -ErrorAction Continue
+        ProcessContent -SourcePath $SourcePath4 -DestPath $DestPath4 -FileName $DestPath4File1 -RemoveLevel File -ErrorAction Continue
     
-    
-    Copy-LogsToNetwork -SourcePath $LocalLogRoot -RootDestPath $NetworkLogPath -ComputerName $ENV:COMPUTERNAME -Date $DateString -Type $Type -Status $Status -BuildNumber $OSInfo.BuildNumber -ErrorCode $Results.ErrorCode -ErrorExCode $Results.ExCode -PreAuth:$false
+        Copy-LogsToNetwork -SourcePath $LocalLogRoot -RootDestPath $NetworkLogPath -ComputerName $ENV:COMPUTERNAME -Date $DateString -Type $Type -Status $Status -BuildNumber $OSInfo.BuildNumber -ErrorCode $Results.ErrorCode -ErrorExCode $Results.ExCode -PreAuth:$false
+
+    }
+    Catch {
+        Write-Host $Error[0]
+    }
 
     Write-Host "Copy Logs Completed."
     Stop-Transcript
+
 }
 
 #endregion #######################
