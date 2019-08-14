@@ -1,4 +1,3 @@
-
 # Windows 10 Feature Updates Scripts
 
 Use these scripts to manage Feature Update deployments and leverage all of the pre and post script functionality available.
@@ -11,15 +10,15 @@ Each file has comments/examples.
 
 ### Install
 ```
-Powershell.exe -ExecutionPolicy ByPass -File Copy-FUFiles.PS1
+Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.PS1
 ````
 ### Repair
 ```
-Powershell.exe -ExecutionPolicy ByPass -File Copy-FUFiles.PS1
+Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.PS1
 ```
 ### Uninstall
 ```
-Powershell.exe -ExecutionPolicy ByPass -File Copy-FUFiles.PS1 -RemoveOnly
+Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.PS1 -RemoveOnly
 ```
 
 4. Create a new SCCM Configuration Item and BaseLine using the Update-SetupConfigCI.ps1 script contents
