@@ -76,7 +76,7 @@ Function ProcessContent {
         $RootDestPath = $DestPath
         If($Hide.IsPresent) {
             Write-Host "Setting destination root to hidden: $($RootDestPath)"
-            Get-Item $RootDestPath -Force | ForEach-Object { $_.Attributes = $_.Attributes -bor 'Hidden' }
+            Get-Item $RootDestPath -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.Attributes = $_.Attributes -bor 'Hidden' } -ErrorAction SilentlyContinue | Out-Null
         }
 
         $NewDestPath = If($DestChildFolder) {Join-Path -Path $RootDestPath -ChildPath $DestChildFolder} Else {$RootDestPath}
@@ -89,20 +89,20 @@ Function ProcessContent {
         {
             "Root" {
                 Write-Host "Removing Existing Path: $($RootDestPath)"
-                Get-Item -Path $RootDestPath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                Get-Item -Path $RootDestPath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
                 break;
             }
             "Child" {
                 If($DestChildFolder) {
                     Write-Host "Removing Existing Path: $($NewDestPath)"
-                    Get-Item -Path $NewDestPath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    Get-Item -Path $NewDestPath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
                 }
                 break;
             }
             "File" {
                 If($FileName) {
                     Write-Host "Removing Existing File: $($DestFilePath)"
-                    Get-Item -Path $DestFilePath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    Get-Item -Path $DestFilePath -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
                 }
                 break;
             }
@@ -112,21 +112,22 @@ Function ProcessContent {
         }
 
         If($SourcePath -and (!($RemoveOnly.IsPresent))) {
-            If($FileName) {
-                $SourceFile = "$($SourcePath)\$($FileName)"
-            }
-            Else {
-                $Sourcefile = Join-Path -Path $SourcePath -ChildPath "*"
-            }
+            If(Test-Path -Path $SourcePath -ErrorAction SilentlyContinue) {
+                If($FileName) {
+                    $SourceFile = "$($SourcePath)\$($FileName)"
+                }
+                Else {
+                    $Sourcefile = Join-Path -Path $SourcePath -ChildPath "*"
+                }
 
-            New-Item -Path $NewDestPath -ItemType Directory -Force
-            Write-Host "Creating New Destination Path: $($NewDestPath)"
+                New-Item -Path $NewDestPath -ItemType Directory -Force | Out-Null
+                Write-Host "Creating New Destination Path: $($NewDestPath)"
 
-            Write-Host "Copying File: $($SourceFile) to $($NewDestPath)"
-            If(Get-Item -Path $Sourcefile -Force -ErrorAction SilentlyContinue) {
-                Copy-Item -Path $Sourcefile -Destination $NewDestPath -Container -Recurse -Force
+                Write-Host "Copying File: $($SourceFile) to $($NewDestPath)"
+                If(Get-Item -Path $Sourcefile -Force -ErrorAction SilentlyContinue) {
+                    Copy-Item -Path $Sourcefile -Destination $NewDestPath -Container -Recurse -Force | Out-Null
+                }
             }
-
         }
 
         Write-Host "Finished Processing Content"

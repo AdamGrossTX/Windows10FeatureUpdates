@@ -53,10 +53,10 @@ Param (
             "Telemetry"="Enable"
             "DiagnosticPrompt"="Enable"
             "PKey"="NPPR9-FWDCX-D2C8J-H872K-2YT43"
-            "PostOOBE"="C:\~FUTemp\Scripts\SetupComplete.cmd"
-            #"PostRollBack"="C:\~FUTemp\Scripts\ErrorHandler.cmd"
+            "PostOOBE"="C:\~FeatureUpdateTemp\Scripts\SetupComplete.cmd"
+            #"PostRollBack"="C:\~FeatureUpdateTemp\Scripts\ErrorHandler.cmd"
             #"PostRollBackContext"="System"
-            "CopyLogs"="\\CM01\FeatureUpdateLogs$\FailedFULogs\$($ENV:COMPUTERNAME)" #Change this to your network path that EVERYONE has write access to. This will likely run under local System so it needs to be wide open.
+            "CopyLogs"="\\CM01\FeatureUpdateLogs$\FailedLogs\$($ENV:COMPUTERNAME)" #Change this to your network path that EVERYONE has write access to. This will likely run under local System so it needs to be wide open.
             #"Drivers"="" #Consider adding drivers if we need it in the future
         }
     },
