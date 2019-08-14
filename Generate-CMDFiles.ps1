@@ -34,7 +34,7 @@ $Content = @"
 @ECHO ON
 Echo BEGIN $($Key).cmd >> c:\Windows\CCM\Logs\FeatureUpdate-$($Key).Log
 
-START Powershell.exe -ExecutionPolicy Bypass -WindowStyle -Hidden -File `"$($CopyLogsPath)`"
+START Powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$($CopyLogsPath)`"
 
 Echo END $($Key).cmd >> $($LogPath)\FeatureUpdate-$($Key).Log
 "@
