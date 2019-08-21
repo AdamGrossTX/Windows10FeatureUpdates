@@ -35,52 +35,47 @@
     SCCM CommandLine
     Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.PS1
  #>
-
+ 
  Param (
-    [string]$GUID = "1a71e7fd-837d-469b-8593-f93683f7f401",
+    [string]$GUID = "6ace78a3-504c-4e45-b0e3-2e72fbeacf87",
     [switch]$RemoveOnly,
-    [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-CopyFiles.log"
+    [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-CopyFiles.log",
+    [string]$BaselineName = "Feature Update Files"
 )
 #Import the Process-Content script/function. This file should be present in the folder where you are launching this file from, or you need to change the path.
-. (Join-Path -Path $PSScriptRoot -ChildPath ".\Process-Content.PS1")
+. (Join-Path -Path $PSScriptRoot -ChildPath ".\Scripts\Process-Content.ps1")
+. (Join-Path -Path $PSScriptRoot -ChildPath ".\Trigger-DCMEvaluation.ps1")
 
 Start-Transcript -Path $TranscriptPath -Append -Force -ErrorAction SilentlyContinue
 $Main = {
 
-    ######
-    $Source1 = "Update"
-    $SourcePath1 = Join-Path -Path $PSScriptRoot -ChildPath $Source1
-    $DestPath1 = "c:\Windows\System32\update\run"
-    $DestChild1 = $GUID
-    ######
+    $Sources = @{
+        "Update" = @{
+            SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Update")
+            DestPath = "c:\Windows\System32\update\run"
+            DestChildFolder = $GUID
+            RemoveLevel = 'Root'
+        }
+        "Scripts" = @{
+            SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Scripts")
+            DestPath = "C:\~FeatureUpdateTemp"
+            DestChildFolder = "Scripts"
+            RemoveLevel = 'Child'
+            Hide = $True
+        }
+    }
+
+    ForEach($Key in $Sources.keys) {
+        $ArgList = $Sources[$Key]
+        If($RemoveOnly.IsPresent) {
+            $ArgList.Remove("SourcePath")
+            $ArgList.Remove("Hide")
+            $ArgList["RemoveOnly"] = $True
+        }
+        ProcessContent @ArgList -ErrorAction Continue
+    }
     
-    ######
-    $Source2 = "Scripts"
-    $SourcePath2 = Join-Path -Path $PSScriptRoot -ChildPath $Source2
-    $DestPath2 = "C:\~FeatureUpdateTemp"
-    $DestChild2 = "Scripts"
-    ######
-
-    ######
-    $SourcePath3 = $PSScriptRoot
-    $DestPath3 = "C:\~FeatureUpdateTemp"
-    $DestChild3 = "Scripts"
-    $DestChild3File1 = "Process-Content.ps1"
-    ######
-
-
-
-    If($RemoveOnly.IsPresent) {
-        ProcessContent -DestPath $DestPath1 -DestChildFolder $DestChild1 -RemoveLevel Root -RemoveOnly
-        ProcessContent -DestPath $DestPath2 -DestChildFolder $DestChild2 -RemoveLevel Child -RemoveOnly
-        ProcessContent -DestPath $DestPath3 -DestChildFolder $DestChild3 -FileName $DestChild3File1 -RemoveLevel Child -RemoveOnly
-
-    }
-    Else {
-        ProcessContent -SourcePath $SourcePath1 -DestPath $DestPath1 -DestChildFolder $DestChild1 -RemoveLevel Root
-        ProcessContent -SourcePath $SourcePath2 -DestPath $DestPath2 -DestChildFolder $DestChild2 -RemoveLevel Child -Hide
-        ProcessContent -SourcePath $SourcePath3 -DestPath $DestPath3 -DestChildFolder $DestChild3 -FileName $DestChild3File1 -RemoveLevel File -Hide
-    }
+    Trigger-DCMEvaluation -BaseLine $BaselineName
 }
 
 &$main
