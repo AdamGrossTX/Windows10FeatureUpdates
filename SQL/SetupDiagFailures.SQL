@@ -10,6 +10,6 @@ FROM
 	V_GS_CM_SetupDiag sd ON s.ResourceID = sd.ResourceID
 where 
 	sd.CustomSetupDiagResult0 <> 'Success' AND
-	sd.profilename0 <> 'FindSuccessfulUpgrade'
+	sd.profilename0 NOT LIKE '%FindSuccessfulUpgrade%'
 order by 
 	datecollected0 desc
