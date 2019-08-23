@@ -134,10 +134,10 @@ Function Process-SetupDiag {
     
             If($XMLResults.FailureData) {
                 $FailureData = $XMLResults.FailureData.Split([Environment]::NewLine)
-                If($FailureData -contains 'SetupDiag reports successful upgrade found.'){
+                If($FailureData -like '*SetupDiag reports successful upgrade found.*'){
                     $ResultsList["UpgradeStatus"] = "Success"
                 }
-                ElseIf($FailureData -contains 'SetupDiag was unable to match to any known failure signatures.') {
+                ElseIf($FailureData -like '*SetupDiag was unable to match to any known failure signatures.*') {
                     $ResultsList["UpgradeStatus"] = "NoMatchFound"
                 }
                 Else {

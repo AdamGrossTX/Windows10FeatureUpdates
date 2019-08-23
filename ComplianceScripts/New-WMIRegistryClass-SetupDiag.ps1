@@ -40,6 +40,10 @@ Param (
         "type" = [System.Management.CimType]::String
         "qualifiers" = @('read')
     }
+    "DateTime" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('key','read')
+    }
     "FailureData" = @{
         "type" = [System.Management.CimType]::String
         "qualifiers" = @('read')
@@ -56,7 +60,39 @@ Param (
         "type" = [System.Management.CimType]::String
         "qualifiers" = @('read')
     }
+    "LastSetupOperationElapsed" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "LastSetupOperationEndTime" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "LastSetupOperationStartTime" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
     "LastSetupPhase" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "LastSetupPhaseElapsed" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "LastSetupPhaseEndTime" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "LastSetupPhaseStartTime" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "OperationCompletedSuccessfully" = @{
+        "type" = [System.Management.CimType]::String
+        "qualifiers" = @('read')
+    }
+    "PhaseCompletedSuccessfully" = @{
         "type" = [System.Management.CimType]::String
         "qualifiers" = @('read')
     }
