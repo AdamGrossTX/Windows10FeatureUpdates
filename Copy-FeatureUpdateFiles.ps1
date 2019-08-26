@@ -11,6 +11,9 @@
     Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.PS1
 .PARAMETER TranscriptPath
 
+.PARAMETER TempDirPath
+    Directory root for scripts to be copied to.
+
 .NOTES
   Version:          1.0
   Author:           Adam Gross - @AdamGrossTX
@@ -38,13 +41,14 @@
  
  Param (
     [string]$GUID = "6ace78a3-504c-4e45-b0e3-2e72fbeacf87",
+    [string]$TempDirPath = "C:\~FeatureUpdateTemp",
     [switch]$RemoveOnly,
     [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-CopyFiles.log",
     [string]$BaselineName = "Feature Update Files"
 )
 #Import the Process-Content script/function. This file should be present in the folder where you are launching this file from, or you need to change the path.
 . (Join-Path -Path $PSScriptRoot -ChildPath ".\Scripts\Process-Content.ps1")
-. (Join-Path -Path $PSScriptRoot -ChildPath ".\Trigger-DCMEvaluation.ps1")
+. (Join-Path -Path $PSScriptRoot -ChildPath ".\Trigger-DCMEvaluation.ps1" -ErrorAction SilentlyContinue)
 
 Start-Transcript -Path $TranscriptPath -Append -Force -ErrorAction SilentlyContinue
 $Main = {
@@ -58,7 +62,7 @@ $Main = {
         }
         "Scripts" = @{
             SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Scripts")
-            DestPath = "C:\~FeatureUpdateTemp"
+            DestPath = $TempDirPath
             DestChildFolder = "Scripts"
             RemoveLevel = 'Child'
             Hide = $True
@@ -75,7 +79,9 @@ $Main = {
         ProcessContent @ArgList -ErrorAction Continue
     }
     
-    Trigger-DCMEvaluation -BaseLine $BaselineName
+    If($BaselineName) {
+        Trigger-DCMEvaluation -BaseLine $BaselineName -ErrorAction SilentlyContinue
+    }
 }
 
 &$main
