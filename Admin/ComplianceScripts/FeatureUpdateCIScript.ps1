@@ -58,7 +58,7 @@ Param (
             #"PostRollBack"="C:\~FeatureUpdateTemp\Scripts\ErrorHandler.cmd"
             #"PostRollBackContext"="System"
             "CopyLogs"="\\CM01\FeatureUpdateLogs$\FailedLogs\$($ENV:COMPUTERNAME)" #automtic log copy feature if setup fails.
-            #"Drivers"="" #Consider adding this if we need it in the future
+            #"InstallDrivers"="" #Consider adding this if we need it in the future
             #"MigrateDrivers" #Consider adding this if we need it in the future
         }
     },
@@ -68,7 +68,7 @@ Param (
             "PostOOBE"=$null
             "PostRollBack"=$null
             "PostRollBackContext"=$null
-            "Drivers"=$null
+            "InstallDrivers"=$null
         }
     },
     #>
