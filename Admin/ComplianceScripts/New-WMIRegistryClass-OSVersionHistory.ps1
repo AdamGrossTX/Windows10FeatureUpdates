@@ -14,15 +14,18 @@
 .PARAMETER ClassPropertyList
     An array of value names to be used as class properties.
 .NOTES
-  Version:        1.0
+  Version:        1.1
   Author:         Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
   Creation Date:  08/09/2019
   Purpose/Change: Initial script development
+
+  1.0 Initial Release
+  1.1 Removed DateCollected. Updated WMI cmdlets to use CIM.
   
 #>
-
+[cmdletbinding()]
 Param (
    [string]$NameSpace = "root\cimv2",
    [string]$ClassName = "CM_OSVersionHistory",
@@ -36,10 +39,6 @@ Param (
          "type" = [System.Management.CimType]::String
          "qualifiers" = @("key","read")
       }
-      #"DateCollected" = @{
-      #   "type" = [System.Management.CimType]::String
-      #   "qualifiers" = @("key","read")
-      #}
       "BaseBuildRevisionNumber" = @{
          "type" = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
@@ -174,7 +173,6 @@ $Main = {
       $NewClass = New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting
       If($CombineKeys.IsPresent) {
          $RegProperties = Get-RegistryProperties -RegistryKey $RegistryKeyList
-         #$RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
          Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
      }
      Else {
@@ -182,7 +180,6 @@ $Main = {
              $RegKeys = Get-Item -Path $Key -ErrorAction SilentlyContinue
              ForEach ($RegKey in $RegKeys) {
                  $RegProperties = Get-RegistryProperties -RegistryKey $RegKey
-                 #$RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
                  $RegProperties["KeyName"] = $RegKey.PSChildName
                  Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
              }
@@ -195,21 +192,25 @@ $Main = {
    }
 }
 
-Function Remove-CustWMIClass {
+Function Remove-CustWMIInstance {
+[cmdletbinding()]
 Param (
    [String]$NameSpace,
    [String]$Class
 )
    Try {
-      Write-Verbose "Create a new empty '$Class' to populate later" | Out-Null
-      Remove-WMIObject -Namespace $NameSpace -class $Class -ErrorAction SilentlyContinue
+      $Instance = Get-CimInstance -ClassName $Class -Namespace $NameSpace -ErrorAction SilentlyContinue
+      If($Instance) {
+         $Instance | Remove-CimInstance -ErrorAction SilentlyContinue
+      }
    }
    Catch {
-      Throw $Error[0]
+      Throw $_
    }
 }
 
 Function New-CustWMIClass {
+[cmdletbinding()]
 Param (
    [String]$NameSpace,
    [String]$Class,
@@ -218,7 +219,7 @@ Param (
 )
    Try {
       If($RemoveExisting.IsPresent) {
-         Remove-CustWMIClass -NameSpace $NameSpace -Class $Class
+         Remove-CustWMIInstance -NameSpace $NameSpace -Class $Class
       } 
 
       If (Get-CimClass -ClassName $Class -Namespace $NameSpace -ErrorAction SilentlyContinue) {
@@ -246,6 +247,7 @@ Param (
 }
  
 Function Set-CustWMIClass {
+[cmdletbinding()]
 Param (
    [String]$NameSpace,
    [String]$Class,
@@ -267,16 +269,15 @@ Param (
             }
          }
       }
-
-  
       $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $Class -Arguments $ValueList -ErrorAction Continue
    }
    Catch {
-      Throw $Error[0]
+      Throw $_
    }
    Return $NewInstance
 }
 Function Get-RegistryProperties {
+   [cmdletbinding()]
    Param (
        $RegistryKey
    )
