@@ -36,10 +36,10 @@ Param (
          "type" = [System.Management.CimType]::String
          "qualifiers" = @("key","read")
       }
-      "DateCollected" = @{
-         "type" = [System.Management.CimType]::String
-         "qualifiers" = @("key","read")
-      }
+      #"DateCollected" = @{
+      #   "type" = [System.Management.CimType]::String
+      #   "qualifiers" = @("key","read")
+      #}
       "BaseBuildRevisionNumber" = @{
          "type" = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
@@ -174,7 +174,7 @@ $Main = {
       $NewClass = New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting
       If($CombineKeys.IsPresent) {
          $RegProperties = Get-RegistryProperties -RegistryKey $RegistryKeyList
-         $RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
+         #$RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
          Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
      }
      Else {
@@ -182,7 +182,7 @@ $Main = {
              $RegKeys = Get-Item -Path $Key -ErrorAction SilentlyContinue
              ForEach ($RegKey in $RegKeys) {
                  $RegProperties = Get-RegistryProperties -RegistryKey $RegKey
-                 $RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
+                 #$RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
                  $RegProperties["KeyName"] = $RegKey.PSChildName
                  Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
              }
