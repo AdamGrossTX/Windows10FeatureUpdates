@@ -170,7 +170,7 @@ Param (
 
 $Main = {
    Try {
-      $NewClass = New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting
+      New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting | Out-Null
       If($CombineKeys.IsPresent) {
          $RegProperties = Get-RegistryProperties -RegistryKey $RegistryKeyList
          Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
@@ -188,25 +188,25 @@ $Main = {
       Return $True
    }
    Catch {
-      Return $Error[0]
+      Return $_
    }
 }
 
 Function Remove-CustWMIInstance {
 [cmdletbinding()]
 Param (
-   [String]$NameSpace,
-   [String]$Class
+      [String]$Namespace,
+      [String]$Class
 )
-   Try {
-      $Instance = Get-CimInstance -ClassName $Class -Namespace $NameSpace -ErrorAction SilentlyContinue
-      If($Instance) {
-         $Instance | Remove-CimInstance -ErrorAction SilentlyContinue
+      Try {
+         $ExistingClass = Get-CIMClass -Namespace $NameSpace -ClassName $Class -ErrorAction SilentlyContinue
+         If($ExistingClass) {
+            ([wmiclass]"$($Namespace):$($Class)").Delete()
+         }
       }
-   }
-   Catch {
-      Throw $_
-   }
+      Catch {
+         Throw $_
+      }
 }
 
 Function New-CustWMIClass {
@@ -242,7 +242,7 @@ Param (
       Write-Verbose "End of trying to create an empty $Class to populate later" | Out-Null
    }
    Catch {
-      Throw $Error[0]
+      Throw $_
    }
 }
  
@@ -270,17 +270,17 @@ Param (
          }
       }
       $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $Class -Arguments $ValueList -ErrorAction Continue
+      Return $NewInstance
    }
    Catch {
       Throw $_
    }
-   Return $NewInstance
 }
 Function Get-RegistryProperties {
-   [cmdletbinding()]
-   Param (
-       $RegistryKey
-   )
+[cmdletbinding()]
+Param (
+      $RegistryKey
+)
    Try {
        [System.Collections.Specialized.OrderedDictionary]$PropertyList = [ordered]@{}
        If($RegistryKey -is [string[]]) {
@@ -298,11 +298,11 @@ Function Get-RegistryProperties {
                $PropertyList[$Prop] = $RegistryKey | Get-ItemPropertyValue -Name $Prop -ErrorAction SilentlyContinue
            }
        }
+       Return $PropertyList
    }
    Catch {
        Throw $Error[0]
    }
-   Return $PropertyList
 }
 
-&$Main
+& $Main

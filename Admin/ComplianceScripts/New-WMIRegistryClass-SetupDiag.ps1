@@ -32,10 +32,6 @@ Param (
    ),
    [Switch]$CombineKeys=$True,
    [hashtable]$ClassPropertyList = @{
-    "DateCollected" = @{
-        "type" = [System.Management.CimType]::String
-        "qualifiers" = @('key','read')
-    }
     "CustomSetupDiagResult" = @{
         "type" = [System.Management.CimType]::String
         "qualifiers" = @('read')
@@ -161,20 +157,21 @@ Param (
         "qualifiers" = @('read')
     }
     "InstallAttempts" = @{
-        "type" = [System.Management.CimType]::String
+        "type" = [System.Management.CimType]::UInt32
         "qualifiers" = @('read')
     }
-
+    "FailureCount" = @{
+        "type" = [System.Management.CimType]::UInt32
+        "qualifiers" = @('read')
+    }
    }
 )
 
 $Main = {
    Try {
-    $NewClass = New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting
-    
+    New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting | Out-Null
     If($CombineKeys.IsPresent) {
         $RegProperties = Get-RegistryProperties -RegistryKey $RegistryKeyList
-        $RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
         Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
     }
     Else {
@@ -182,7 +179,6 @@ $Main = {
             $RegKeys = Get-Item -Path $Key -ErrorAction SilentlyContinue
             ForEach ($RegKey in $RegKeys) {
                 $RegProperties = Get-RegistryProperties -RegistryKey $RegKey
-                $RegProperties["DateCollected"] = (Get-Date -Format "MM/dd/yyyy HH:mm:ss")
                 $RegProperties["KeyName"] = $RegKey.PSChildName
                 Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
             }
@@ -191,25 +187,29 @@ $Main = {
     Return $True
    }
    Catch {
-      Return $Error[0]
+      Return $_
    }
 }
 
-Function Remove-CustWMIClass {
+Function Remove-CustWMIInstance {
+[cmdletbinding()]
 Param (
-   [String]$NameSpace,
-   [String]$Class
+    [String]$Namespace,
+    [String]$Class
 )
-   Try {
-      Write-Verbose "Create a new empty '$Class' to populate later" | Out-Null
-      Remove-WMIObject -Namespace $NameSpace -class $Class -ErrorAction SilentlyContinue
-   }
-   Catch {
-      Throw $Error[0]
-   }
+    Try {
+        $ExistingClass = Get-CIMClass -Namespace $NameSpace -ClassName $Class -ErrorAction SilentlyContinue
+        If($ExistingClass) {
+            ([wmiclass]"$($Namespace):$($Class)").Delete()
+        }
+    }
+    Catch {
+        Throw $_
+    }
 }
 
 Function New-CustWMIClass {
+[cmdletbinding()]
 Param (
    [String]$NameSpace,
    [String]$Class,
@@ -218,7 +218,7 @@ Param (
 )
    Try {
       If($RemoveExisting.IsPresent) {
-         Remove-CustWMIClass -NameSpace $NameSpace -Class $Class
+         Remove-CustWMIInstance -NameSpace $NameSpace -Class $Class
       } 
 
       If (Get-CimClass -ClassName $Class -Namespace $NameSpace -ErrorAction SilentlyContinue) {
@@ -241,11 +241,12 @@ Param (
       Write-Verbose "End of trying to create an empty $Class to populate later" | Out-Null
    }
    Catch {
-      Throw $Error[0]
+      Throw $_
    }
 }
  
 Function Set-CustWMIClass {
+[cmdletbinding()]
 Param (
    [String]$NameSpace,
    [String]$Class,
@@ -267,41 +268,41 @@ Param (
             }
          }
       }
-
       $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $Class -Arguments $ValueList -ErrorAction Continue
+      Return $NewInstance
    }
    Catch {
-      Throw $Error[0]
+      Throw $_
    }
-   Return $NewInstance
 }
 
 Function Get-RegistryProperties {
-    Param (
-        $RegistryKey
-    )
-    Try {
-        [System.Collections.Specialized.OrderedDictionary]$PropertyList = [ordered]@{}
-        If($RegistryKey -is [string[]]) {
-            ForEach($Key in $RegistryKey) {
-                $RegKey = Get-Item -Path "$($Key)" -ErrorAction SilentlyContinue
-                If($RegKey) {
-                    ForEach ($Prop in $RegKey.Property) {
-                        $PropertyList[$Prop] = Get-ItemPropertyValue -Path $Key -Name $Prop
-                    }
+[cmdletbinding()]
+Param (
+    $RegistryKey
+)
+Try {
+    [System.Collections.Specialized.OrderedDictionary]$PropertyList = [ordered]@{}
+    If($RegistryKey -is [string[]]) {
+        ForEach($Key in $RegistryKey) {
+            $RegKey = Get-Item -Path "$($Key)" -ErrorAction SilentlyContinue
+            If($RegKey) {
+                ForEach ($Prop in $RegKey.Property) {
+                    $PropertyList[$Prop] = Get-ItemPropertyValue -Path $Key -Name $Prop
                 }
             }
         }
-        Else {
-            ForEach ($Prop in $RegistryKey.Property) {
-                $PropertyList[$Prop] = $RegistryKey | Get-ItemPropertyValue -Name $Prop -ErrorAction SilentlyContinue
-            }
-        }
     }
-    Catch {
-        Throw $Error[0]
+    Else {
+        ForEach ($Prop in $RegistryKey.Property) {
+            $PropertyList[$Prop] = $RegistryKey | Get-ItemPropertyValue -Name $Prop -ErrorAction SilentlyContinue
+        }
     }
     Return $PropertyList
 }
+Catch {
+    Throw $_
+}
+}
 
-&$Main
+& $Main
