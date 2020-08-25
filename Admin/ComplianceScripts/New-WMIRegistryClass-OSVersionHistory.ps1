@@ -19,72 +19,80 @@
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
   Creation Date:  08/09/2019
-  Purpose/Change: Initial script development
+  Purpose/Change:
+   1.0 Initial Release
+   1.1 Removed DateCollected. Updated to work on PowerShell 7 and remove WMI calls
 
-  1.0 Initial Release
-  1.1 Removed DateCollected. Updated WMI cmdlets to use CIM.
-  
 #>
 [cmdletbinding()]
 Param (
+   [Parameter()]
    [string]$NameSpace = "root\cimv2",
+
+   [Parameter()]
    [string]$ClassName = "CM_OSVersionHistory",
+
+   [Parameter()]
    [string[]]$RegistryKeyList = @(
       "HKLM:System\Setup\Source OS*",
       "HKLM:SOFTWARE\Microsoft\Windows NT\CurrentVersion"
    ),
-   [Switch]$CombineKeys,
+
+   [Parameter()]
+   [bool]$CombineKeys,
+
+   [Parameter()]
    [hashtable]$ClassPropertyList = @{
-      "KeyName" = @{
-         "type" = [System.Management.CimType]::String
-         "qualifiers" = @("key","read")
+      "KeyName"                   = @{
+         "type"       = [System.Management.CimType]::String
+         "qualifiers" = @("key", "read")
       }
-      "BaseBuildRevisionNumber" = @{
-         "type" = [System.Management.CimType]::UInt32
+      "BaseBuildRevisionNumber"   = @{
+         "type"       = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
       }
-      "BuildBranch" = @{
-         "type" = [System.Management.CimType]::String
+      "BuildBranch"               = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "BuildGUID" = @{
-         "type" = [System.Management.CimType]::String
+      "BuildGUID"                 = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "BuildLab" = @{
-         "type" = [System.Management.CimType]::String
+      "BuildLab"                  = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "BuildLabEx" = @{
-         "type" = [System.Management.CimType]::String
+      "BuildLabEx"                = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "CompositionEditionID" = @{
-         "type" = [System.Management.CimType]::String
+      "CompositionEditionID"      = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "CurrentBuild" = @{
-         "type" = [System.Management.CimType]::String
+      "CurrentBuild"              = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "CurrentBuildNumber" = @{
-         "type" = [System.Management.CimType]::String
+      "CurrentBuildNumber"        = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
       "CurrentMajorVersionNumber" = @{
-         "type" = [System.Management.CimType]::UInt32
+         "type"       = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
       }
       "CurrentMinorVersionNumber" = @{
-         "type" = [System.Management.CimType]::UInt32
+         "type"       = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
       }
-      "CurrentType" = @{
-         "type" = [System.Management.CimType]::String
+      "CurrentType"               = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "CurrentVersion" = @{
-         "type" = [System.Management.CimType]::String
+      "CurrentVersion"            = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
       #Excluding these since they are binary keys and add little value
@@ -96,95 +104,94 @@ Param (
       #   "type" = [System.Management.CimType]::String
       #   "qualifiers" = @("read")
       #}
-      "EditionID" = @{
-         "type" = [System.Management.CimType]::String
+      "EditionID"                 = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "EditionSubManufacturer" = @{
-         "type" = [System.Management.CimType]::String
+      "EditionSubManufacturer"    = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "EditionSubstring" = @{
-         "type" = [System.Management.CimType]::String
+      "EditionSubstring"          = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "EditionSubVersion" = @{
-         "type" = [System.Management.CimType]::String
+      "EditionSubVersion"         = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "InstallationType" = @{
-         "type" = [System.Management.CimType]::String
+      "InstallationType"          = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "InstallDate" = @{
-         "type" = [System.Management.CimType]::UInt32
+      "InstallDate"               = @{
+         "type"       = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
       }
-      "InstallTime" = @{
-         "type" = [System.Management.CimType]::UInt64
+      "InstallTime"               = @{
+         "type"       = [System.Management.CimType]::UInt64
          "qualifiers" = @("read")
       }
-      "MigrationScope" = @{
-         "type" = [System.Management.CimType]::UInt32
+      "MigrationScope"            = @{
+         "type"       = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
       }
-      "PathName" = @{
-         "type" = [System.Management.CimType]::String
+      "PathName"                  = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "ProductId" = @{
-         "type" = [System.Management.CimType]::String
+      "ProductId"                 = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "ProductName" = @{
-         "type" = [System.Management.CimType]::String
+      "ProductName"               = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "RegisteredOrganization" = @{
-         "type" = [System.Management.CimType]::String
+      "RegisteredOrganization"    = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "RegisteredOwner" = @{
-         "type" = [System.Management.CimType]::String
+      "RegisteredOwner"           = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "ReleaseId" = @{
-         "type" = [System.Management.CimType]::String
+      "ReleaseId"                 = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "SoftwareType" = @{
-         "type" = [System.Management.CimType]::String
+      "SoftwareType"              = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "SystemRoot" = @{
-         "type" = [System.Management.CimType]::String
+      "SystemRoot"                = @{
+         "type"       = [System.Management.CimType]::String
          "qualifiers" = @("read")
       }
-      "UBR" = @{
-         "type" = [System.Management.CimType]::UInt32
+      "UBR"                       = @{
+         "type"       = [System.Management.CimType]::UInt32
          "qualifiers" = @("read")
       }
-      
    }
 )
 
 $Main = {
    Try {
       New-CustWMIClass -NameSpace $NameSpace -Class $ClassName -PropertyList $ClassPropertyList -RemoveExisting | Out-Null
-      If($CombineKeys.IsPresent) {
+      If ($CombineKeys) {
          $RegProperties = Get-RegistryProperties -RegistryKey $RegistryKeyList
          Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
-     }
-     Else {
+      }
+      Else {
          ForEach ($Key in $RegistryKeyList) {
-             $RegKeys = Get-Item -Path $Key -ErrorAction SilentlyContinue
-             ForEach ($RegKey in $RegKeys) {
-                 $RegProperties = Get-RegistryProperties -RegistryKey $RegKey
-                 $RegProperties["KeyName"] = $RegKey.PSChildName
-                 Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
-             }
+            $RegKeys = Get-Item -Path $Key -ErrorAction SilentlyContinue
+            ForEach ($RegKey in $RegKeys) {
+               $RegProperties = Get-RegistryProperties -RegistryKey $RegKey
+               $RegProperties["KeyName"] = $RegKey.PSChildName
+               Set-CustWMIClass -NameSpace $NameSpace -Class $ClassName -Values $RegProperties -PropertyList $ClassPropertyList | Out-Null
+            }
          }
-     }
+      }
       Return $True
    }
    Catch {
@@ -193,50 +200,50 @@ $Main = {
 }
 
 Function Remove-CustWMIInstance {
-[cmdletbinding()]
-Param (
+   [cmdletbinding()]
+   Param (
       [String]$Namespace,
       [String]$Class
-)
-      Try {
-         $ExistingClass = Get-CIMClass -Namespace $NameSpace -ClassName $Class -ErrorAction SilentlyContinue
-         If($ExistingClass) {
-            ([wmiclass]"$($Namespace):$($Class)").Delete()
-         }
+   )
+   Try {
+      $ExistingClass = Get-CIMClass -Namespace $NameSpace -ClassName $Class -ErrorAction SilentlyContinue
+      If ($ExistingClass) {
+         ([wmiclass]"$($Namespace):$($Class)").Delete()
       }
-      Catch {
-         Throw $_
-      }
+   }
+   Catch {
+      Throw $_
+   }
 }
 
 Function New-CustWMIClass {
-[cmdletbinding()]
-Param (
-   [String]$NameSpace,
-   [String]$Class,
-   $PropertyList,
-   [Switch]$RemoveExisting
-)
+   [cmdletbinding()]
+   Param (
+      [String]$NameSpace,
+      [String]$Class,
+      $PropertyList,
+      [Switch]$RemoveExisting
+   )
    Try {
-      If($RemoveExisting.IsPresent) {
+      If ($RemoveExisting.IsPresent) {
          Remove-CustWMIInstance -NameSpace $NameSpace -Class $Class
-      } 
+      }
 
       If (Get-CimClass -ClassName $Class -Namespace $NameSpace -ErrorAction SilentlyContinue) {
          Write-Verbose "WMI Class $Class Already Exists" | Out-Null
-      }    
+      }
       Else {
          Write-Verbose "Create WMI Class '$Class'" | Out-Null
-         $NewClass = New-Object System.Management.ManagementClass($NameSpace, [String]::Empty, $Null); 
+         $NewClass = New-Object System.Management.ManagementClass($NameSpace, [String]::Empty, $Null);
          $NewClass['__CLASS'] = $Class
          $NewClass.Qualifiers.Add("Static", $true)
-        
-         ForEach($key in $PropertyList.keys) {
+
+         ForEach ($key in $PropertyList.keys) {
             $NewClass.Properties.Add($key, $PropertyList[$key].Type, $false)
-            ForEach($Qualifier in $PropertyList[$Key].Qualifiers) {
-                $NewClass.Properties[$key].Qualifiers.Add("$($Qualifier)", $true)
+            ForEach ($Qualifier in $PropertyList[$Key].Qualifiers) {
+               $NewClass.Properties[$key].Qualifiers.Add("$($Qualifier)", $true)
             }
-        }
+         }
          $NewClass.Put() | Out-Null
       }
       Write-Verbose "End of trying to create an empty $Class to populate later" | Out-Null
@@ -245,25 +252,25 @@ Param (
       Throw $_
    }
 }
- 
+
 Function Set-CustWMIClass {
-[cmdletbinding()]
-Param (
-   [String]$NameSpace,
-   [String]$Class,
-   [System.Collections.Specialized.OrderedDictionary]$Values,
-   $PropertyList
-)
+   [cmdletbinding()]
+   Param (
+      [String]$NameSpace,
+      [String]$Class,
+      [System.Collections.Specialized.OrderedDictionary]$Values,
+      $PropertyList
+   )
    Try {
-      $ValueList = @{} 
+      $ValueList = @{}
       ForEach ($Key in $PropertyList.Keys) {
-         If($Values[$key]) {
-            If($Values[$key] -is [int32]) {
+         If ($Values[$key]) {
+            If ($Values[$key] -is [int32]) {
                $ValueList[$Key] = ([uint32]$Values[$key])
-            } 
-            ElseIf($Values[$key] -is [int64]) {
+            }
+            ElseIf ($Values[$key] -is [int64]) {
                $ValueList[$Key] = ([uint64]$Values[$key])
-            } 
+            }
             Else {
                $ValueList[$Key] = $Values[$key]
             }
@@ -276,32 +283,33 @@ Param (
       Throw $_
    }
 }
+
 Function Get-RegistryProperties {
-[cmdletbinding()]
-Param (
+   [cmdletbinding()]
+   Param (
       $RegistryKey
-)
+   )
    Try {
-       [System.Collections.Specialized.OrderedDictionary]$PropertyList = [ordered]@{}
-       If($RegistryKey -is [string[]]) {
-           ForEach($Key in $RegistryKey) {
-               $RegKey = Get-Item -Path "$($Key)" -ErrorAction SilentlyContinue
-               If($RegKey) {
-                   ForEach ($Prop in $RegKey.Property) {
-                       $PropertyList[$Prop] = Get-ItemPropertyValue -Path $Key -Name $Prop
-                   }
+      [System.Collections.Specialized.OrderedDictionary]$PropertyList = [ordered]@{}
+      If ($RegistryKey -is [string[]]) {
+         ForEach ($Key in $RegistryKey) {
+            $RegKey = Get-Item -Path "$($Key)" -ErrorAction SilentlyContinue
+            If ($RegKey) {
+               ForEach ($Prop in $RegKey.Property) {
+                  $PropertyList[$Prop] = Get-ItemPropertyValue -Path $Key -Name $Prop
                }
-           }
-       }
-       Else {
-           ForEach ($Prop in $RegistryKey.Property) {
-               $PropertyList[$Prop] = $RegistryKey | Get-ItemPropertyValue -Name $Prop -ErrorAction SilentlyContinue
-           }
-       }
-       Return $PropertyList
+            }
+         }
+      }
+      Else {
+         ForEach ($Prop in $RegistryKey.Property) {
+            $PropertyList[$Prop] = $RegistryKey | Get-ItemPropertyValue -Name $Prop -ErrorAction SilentlyContinue
+         }
+      }
+      Return $PropertyList
    }
    Catch {
-       Throw $Error[0]
+      Throw $_
    }
 }
 

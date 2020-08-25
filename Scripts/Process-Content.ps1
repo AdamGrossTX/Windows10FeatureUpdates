@@ -17,15 +17,17 @@
     Optional - Only removes the items specified. No Copy is performed
 .PARAMETER RemoveLevel
     Optional - Set to Root, Child or File to remove various levels of file/folder structure.
-    
+
 .NOTES
-  Version:          1.0
+  Version:          1.1
   Author:           Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
   Creation Date:    08/08/2019
-  Purpose/Change:   Initial script development
-  
+  Purpose/Change:
+    1.0 Initial script development
+    1.1 Updated Formatting
+
 .EXAMPLE
     Copy all content from SourcePath to DestPath\DestChildFolder and Remove DestPath1 if it exits before copying.
     ProcessContent -SourcePath $SourcePath -DestPath $DestPath -DestChildFolder $DestChild -RemoveLevel Root
@@ -33,14 +35,15 @@
 .EXAMPLE
     Copy single file from SourcePath to DestPath\DestChildFolder\DestChildFolder and Remove DestChildFile if it exits before copying and Hide the DestPath folder.
     ProcessContent -SourcePath $SourcePath3 -DestPath $DestPath3 -DestChildFolder $DestChild3 -FileName $DestChildFile -RemoveLevel File -Hide
-       
+
 .EXAMPLE
     Remove DestPath and all child content without copying any new content
     ProcessContent -DestPath $DestPath -DestChildFolder $DestChild -RemoveLevel Root -RemoveOnly
-        
+
 #>
 
 Function ProcessContent {
+    [cmdletbinding()]
     Param (
         [cmdletbinding(DefaultParameterSetName='Copy')]
         [Parameter(Mandatory=$True, ParameterSetName='Copy')]
@@ -76,12 +79,12 @@ Function ProcessContent {
         $RootDestPath = $DestPath
         If($Hide.IsPresent) {
             Write-Host "Setting destination root to hidden: $($RootDestPath)"
-            New-Item $RootDestPath -ItemType Directory -Force -ErrorAction SilentlyContinue 
+            New-Item $RootDestPath -ItemType Directory -Force -ErrorAction SilentlyContinue
             Get-Item $RootDestPath -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.Attributes = $_.Attributes -bor 'Hidden' } -ErrorAction SilentlyContinue | Out-Null
         }
 
         $NewDestPath = If($DestChildFolder) {Join-Path -Path $RootDestPath -ChildPath $DestChildFolder} Else {$RootDestPath}
-        
+
         If($FileName) {
             $DestFilePath = "$($NewDestPath)\$($FileName)"
         }

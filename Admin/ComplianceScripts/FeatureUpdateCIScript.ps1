@@ -26,63 +26,94 @@
 .PARAMETER AlwaysReWrite
     Forces the INI file to be completely re-writted with the values given, instead of lines being edited.
     This can provide you will a clean file in case you feel that there has been some file corruption.
+
+.PARAMETER FuTempDir
+    The local path to store the scripts for the Feature Update to use
+
+.PARAMETER LogPath
+    The network share to copy logs on failure
+
 .NOTES
-  Version:        1.0
+  Version:        1.1
   Author:         Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
   Creation Date:  08/08/2019
-  Purpose/Change: Initial script development
-  
+  Purpose/Change:
+    1.0 Initial Script
+    1.1 Updated to support Windows 10 2004 options
+
 .EXAMPLE
     Since this will be called in SCCM, set all values in the Param section instead of passing in the command line args.
 
 #>
-
+[CmdletBinding()]
 Param (
+    [Parameter()]
     [string]
     $ActualValue, # The incoming compliance value from the CI.
     #This is an ordered, nested dictionary. Each section will have a nested dictionary with name/value pairs
-    [switch]$Remediate=$True,
+
+    [Parameter()]
+    [bool]$Remediate = $True,
+
+    [Parameter()]
+    [string]$SourceIniFile = "$($env:SystemDrive)\Users\Default\AppData\Local\Microsoft\Windows\WSUS\SetupConfig.ini",
+
+    [Parameter()]
+    [string]$FuTempDir = "C:\~FeatureUpdateTemp",
+
+    [Parameter()]
+    [string]$LogPath = "\\CM01\FeatureUpdateLogs$\FailedLogs",
+
+    [Parameter()]
+    [string]$DestIniFile = "$($env:SystemDrive)\Users\Default\AppData\Local\Microsoft\Windows\WSUS\SetupConfig.ini",
+
+    [Parameter()]
+    [switch]$AlwaysReWrite,
+
+    #Any options listed in the docs as available for the TARGET OS can be used here
+    #https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-setup-command-line-options
+    [Parameter()]
     [System.Collections.Specialized.OrderedDictionary]$AddSettings = [ordered]@{
         "SetupConfig" = [ordered]@{
-            "BitLocker"="AlwaysSuspend";
-            "Compat"="IgnoreWarning";
-            "Priority"="Normal"
-            "DynamicUpdate"="Enable"
-            "ShowOOBE"="None"
-            "Telemetry"="Enable"
-            "DiagnosticPrompt"="Enable"
-            "PKey"="NPPR9-FWDCX-D2C8J-H872K-2YT43"
-            "PostOOBE"="C:\~FeatureUpdateTemp\Scripts\SetupComplete.cmd"
-            #"PostRollBack"="C:\~FeatureUpdateTemp\Scripts\ErrorHandler.cmd"
-            #"PostRollBackContext"="System"
-            "CopyLogs"="\\CM01\FeatureUpdateLogs$\FailedLogs\$($ENV:COMPUTERNAME)" #automtic log copy feature if setup fails.
-            #"InstallDrivers"="" #Consider adding this if we need it in the future
-            #"MigrateDrivers" #Consider adding this if we need it in the future
+            "BitLocker"             =   "AlwaysSuspend"; #{AlwaysSuspend | TryKeepActive | ForceKeepActive}
+            "Compat"                =   "IgnoreWarning"; #{IgnoreWarning | ScanOnly}
+            "Priority"              =   "Normal" #{High | Normal | Low}
+            "DynamicUpdate"         =   "Enable" #{Enable | Disable | NoDrivers | NoLCU | NoDriversNoLCU}
+            "ShowOOBE"              =   "None" #{Full | None}
+            "Telemetry"             =   "Enable" #{Enable | Disable}
+            "DiagnosticPrompt"      =   "Enable" #{Enable | Disable}
+            "PKey"                  =   "NPPR9-FWDCX-D2C8J-H872K-2YT43" #<product key>
+            "PostOOBE"              =   "$($FuTempDir)\Scripts\SetupComplete.cmd" #<location> [\setupcomplete.cmd]
+            "CopyLogs"              =   "$($LogPath)\$($ENV:COMPUTERNAME)" #<location> automtic log copy feature if setup fails.
+            #"SkipFinalize"         =   "" #2004 and up
+            #"Finalize"             =   "" #2004 and up
+            #"NoReboot"             =   ""
+            #"InstallDrivers"       =   "" #<location>
+            #"MigrateDrivers"       =   "All" #{All | None}
+            #"PostRollBack"         =   "$($FuTempDir)\Scripts\ErrorHandler.cmd" #<location>
+            #"PostRollBackContext"  =   "System" #{system | user}
         }
-    },
+    }
     <# Example of the removal option
     [System.Collections.Specialized.OrderedDictionary]$RemoveSettings = [ordered]@{
         "SetupConfig" = [ordered]@{
-            "PostOOBE"=$null
-            "PostRollBack"=$null
-            "PostRollBackContext"=$null
-            "InstallDrivers"=$null
+            "PostOOBE"              =   $null
+            "PostRollBack"          =   $null
+            "PostRollBackContext"   =   $null
+            "InstallDrivers"        =   $null
         }
     },
     #>
-    [string]$SourceIniFile = "$($env:SystemDrive)\Users\Default\AppData\Local\Microsoft\Windows\WSUS\SetupConfig.ini",
-    [string]$DestIniFile,
-    [switch]$AlwaysReWrite
 )
 #region Main
 $main = {
     Try {
-        IF(Test-Path -Path $SourceIniFile) {
+        If (Test-Path -Path $SourceIniFile -ErrorAction SilentlyContinue) {
             $CurrrentIniFileContent = Parse-IniFile -IniFile $SourceIniFile
         }
-        If((!($AlwaysReWrite.IsPresent)) -and ($CurrrentIniFileContent -is [System.Collections.Specialized.OrderedDictionary])) {
+        If (-not $AlwaysReWrite.IsPresent -and ($CurrrentIniFileContent -is [System.Collections.Specialized.OrderedDictionary])) {
             $NewIniDictionary = Process-Content -OrigContent $CurrrentIniFileContent -NewContent $AddSettings -RemoveContent $RemoveSettings
         }
         Else {
@@ -90,32 +121,33 @@ $main = {
             $NewIniDictionary = $AddSettings
             $NewIniDictionary["Compliance"] = "NonCompliant"
         }
-        If($Remediate.IsPresent) {
+        If ($Remediate) {
             #If no destination is specified, the source path is used
-            If(!($DestIniFile)) { $DestIniFile = $SourceIniFile }
-            $ComplianceValue =  $NewIniDictionary["Compliance"]
+            If (-not $DestIniFile) {
+                $DestIniFile = $SourceIniFile
+            }
+            $ComplianceValue = $NewIniDictionary["Compliance"]
             #Remove the compliance key so it doesn't get added to the final INI file.
             $NewIniDictionary.Remove("Compliance")
-            $Results = Export-IniFile -Content $NewIniDictionary -NewFile $DestIniFile
+            Export-IniFile -Content $NewIniDictionary -NewFile $DestIniFile | Out-Null
         }
         Else {
-            $ComplianceValue =  $NewIniDictionary["Compliance"]
+            $ComplianceValue = $NewIniDictionary["Compliance"]
         }
-        $ReturnValue = $ComplianceValue
+        Return $ComplianceValue
     }
     Catch {
-        $ReturnValue = $Error[0]
+        $PSCmdlet.ThrowTerminatingError($_)
     }
-
-    Return $ReturnValue
-    
 }
 #endregion
 #parses an INI file content into ordered dictionaries
 #https://github.com/hsmalley/Powershell/blob/master/Parse-IniFile.ps1
 Function Parse-IniFile {
+    [CmdletBinding()]
     Param (
-        $IniFile
+        [Parameter()]
+        [string]$IniFile
     )
 
     Try {
@@ -127,29 +159,26 @@ Function Parse-IniFile {
                 $ini[$section] = [Ordered]@{}
                 continue
             }
-            # Comment  
-            "^(;.*)$" {  
-                if (!($section))  
-                {  
-                    $section = "No-Section"  
-                    $ini[$section] = [Ordered]@{}  
-                }  
-                $value = $matches[1]  
-                $CommentCount = $CommentCount + 1  
-                $name = "Comment" + $CommentCount  
-                $ini[$section][$name] = $value  
+            # Comment
+            "^(;.*)$" {
+                if (!($section)) {
+                    $section = "No-Section"
+                    $ini[$section] = [Ordered]@{}
+                }
+                $value = $matches[1]
+                $CommentCount = $CommentCount + 1
+                $name = "Comment" + $CommentCount
+                $ini[$section][$name] = $value
                 continue
             }
             # Key/Value Pair
-            "(.+?)\s*=\s*(.*)"  
-            {  
-                if (!($section))  
-                {  
-                    $section = "No-Section"  
-                    $ini[$section] = @{}  
-                }  
-                $name,$value = $matches[1..2]  
-                $ini[$section][$name] = $value  
+            "(.+?)\s*=\s*(.*)" {
+                if (!($section)) {
+                    $section = "No-Section"
+                    $ini[$section] = @{}
+                }
+                $name, $value = $matches[1..2]
+                $ini[$section][$name] = $value
                 continue
             }
             # Key Only
@@ -158,14 +187,12 @@ Function Parse-IniFile {
                 continue
             }
         }
-        $ReturnValue = $ini
+        Return $ini
     }
     Catch {
-        $ReturnValue = $Error[0]
+        $PSCmdlet.ThrowTerminatingError($_)
     }
-    Return $ReturnValue
-    
-  }
+}
 Function Process-Content {
     #comment based help is here
     [cmdletbinding()]
@@ -174,9 +201,8 @@ Function Process-Content {
         [System.Collections.Specialized.OrderedDictionary]$NewContent,
         [System.Collections.Specialized.OrderedDictionary]$RemoveContent
     )
-    
-    $ReturnValue = $null
-    Try  {
+
+    Try {
         #create clones of hashtables so originals are not modified
         $Primary = $OrigContent
         $Secondary = $NewContent
@@ -185,43 +211,40 @@ Function Process-Content {
         $NonCompliantCount = 0
 
         #If specified, we will remove these keys from the source if they exist
-        ForEach($Key in $RemoveContent.Keys)
-        {
-            If($RemoveContent[$key] -is [System.Collections.Specialized.OrderedDictionary]) {
-                ForEach($ChildKey in $RemoveContent[$key].keys) {
-                    If($Primary[$key][$ChildKey]) {
+        ForEach ($Key in $RemoveContent.Keys) {
+            If ($RemoveContent[$key] -is [System.Collections.Specialized.OrderedDictionary]) {
+                ForEach ($ChildKey in $RemoveContent[$key].keys) {
+                    If ($Primary[$key][$ChildKey]) {
                         $Primary[$key].Remove($ChildKey)
                         $NonCompliantCount++
                     }
                 }
             }
             Else {
-                If($Primary[$key]) {
+                If ($Primary[$key]) {
                     $Primary.Remove($Key)
                     $NonCompliantCount++
                 }
             }
         }
 
-        ForEach($Key in $Primary.keys) {
-            If($Primary[$key] -is [System.Collections.Specialized.OrderedDictionary]) {
+        ForEach ($Key in $Primary.keys) {
+            If ($Primary[$key] -is [System.Collections.Specialized.OrderedDictionary]) {
 
                 #I'm so done writing this code. This basically checks to see if you have an exact number of records in the source and new
                 #If you don't do this, then compliance will be incorrect.
-                If($Primary[$key].Count -lt $Secondary[$key].Count)
-                {
+                If ($Primary[$key].Count -lt $Secondary[$key].Count) {
                     $NonCompliantCount++
                 }
 
-                If($Secondary[$key]) {
+                If ($Secondary[$key]) {
 
                     #Find all duplicate keys in the source
-                    $Duplicates = $Primary[$key].keys | where-object {$Secondary[$key].Contains($_)}
+                    $Duplicates = $Primary[$key].keys | where-object { $Secondary[$key].Contains($_) }
                     If ($Duplicates) {
                         Foreach ($item in $Duplicates) {
                             #Test for compliance. If the values don't match, then this item should be remediated
-                            If($Primary[$key][$item] -ne $Secondary[$key][$item])
-                            {
+                            If ($Primary[$key][$item] -ne $Secondary[$key][$item]) {
                                 $NonCompliantCount ++
                             }
                             $Primary[$key].Remove($item)
@@ -230,8 +253,8 @@ Function Process-Content {
 
                     #Adds remaining items from the source to the output since these weren't duplicates.
                     #These don't impact compliance since we don't care if they exist
-                    ForEach($ChildKey in $Primary[$key].keys) {
-                        If($Secondary[$key]) {
+                    ForEach ($ChildKey in $Primary[$key].keys) {
+                        If ($Secondary[$key]) {
                             $Secondary[$key][$childKey] = $Primary[$key][$ChildKey]
                         }
                         Else {
@@ -244,12 +267,11 @@ Function Process-Content {
                 }
             }
             Else {
-                $duplicates = $Primary.keys | where-object {$Secondary.Contains($_)}
+                $duplicates = $Primary.keys | where-object { $Secondary.Contains($_) }
                 if ($duplicates) {
                     foreach ($item in $duplicates) {
                         #Test for compliance. If the values don't match, then this item should be remediated
-                        If($Primary[$item] -ne $Secondary[$item])
-                        {
+                        If ($Primary[$item] -ne $Secondary[$item]) {
                             $NonCompliantCount ++
                         }
                         $Primary.Remove($item)
@@ -260,50 +282,50 @@ Function Process-Content {
 
         #If No Mismatched values are found, $Compliance is set to Compliance
         $Compliance = Switch ($NonCompliantCount) {
-            0 {"Compliant"; break;}
-            default {"NonCompliant"; break;}
+            0 { "Compliant"; break; }
+            default { "NonCompliant"; break; }
         }
 
         $Secondary["Compliance"] = $Compliance
 
-        $ReturnValue = $Secondary
+        Return $Secondary
     }
 
     catch {
-        $ReturnValue = $error[0]
+        $PSCmdlet.ThrowTerminatingError($_)
     }
-        Return $ReturnValue
 }
 
 Function Export-IniFile {
-
+    [CmdletBinding()]
     Param (
+        [parameter()]
         [System.Collections.Specialized.OrderedDictionary]$Content,
+
+        [parameter()]
         [string]$NewFile
     )
-    
-    $ReturnValue = $null
+
     Try {
         #This array will be the final ini output
         $NewIniContent = @()
 
         $KeyCount = 0
         #Convert the dictionary into ini file format
-        ForEach($sectionHash in $Content.Keys)
-        {
+        ForEach ($sectionHash in $Content.Keys) {
             $KeyCount++
             #Create section headers
             $NewIniContent += "[{0}]" -f $sectionHash
 
-            #Create all section content. Items with a Name and Value in the dictionary will be formatted as Name=Value. 
+            #Create all section content. Items with a Name and Value in the dictionary will be formatted as Name=Value.
             #Any items with no value will be formatted as Name only.
             ForEach ($key in $Content[$sectionHash].keys) {
-                $NewIniContent += 
-                If ($Key -like "Comment*"){
+                $NewIniContent +=
+                If ($Key -like "Comment*") {
                     #Comment
                     $Content[$sectionHash][$key]
-                }    
-                ElseIf($NewIniDictionary[$sectionHash][$key]) {
+                }
+                ElseIf ($NewIniDictionary[$sectionHash][$key]) {
                     #Name=Value format
                     ($key, $Content[$sectionHash][$key]) -join "="
                 }
@@ -313,7 +335,7 @@ Function Export-IniFile {
                 }
             }
             #Add a blank line after each section if there is more than one, but don't add one after the last section
-            If($KeyCount -lt $Content.Keys.Count) {
+            If ($KeyCount -lt $Content.Keys.Count) {
                 $NewIniContent += ""
             }
         }
@@ -321,12 +343,11 @@ Function Export-IniFile {
 
         New-Item -Path $NewFile -ItemType File -Force | Out-Null
         $NewIniContent -join "`r`n" | Out-File -FilePath $NewFile -Force -NoNewline | Out-Null
-        $ReturnValue = $NewIniContent
+        Return $NewIniContent
     }
     Catch {
-        $ReturnValue = $Error[0]
+        $PSCmdlet.ThrowTerminatingError($_)
     }
-    Return $ReturnValue
 }
 
 #launch Main

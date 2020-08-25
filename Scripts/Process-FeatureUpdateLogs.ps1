@@ -19,24 +19,42 @@
     Optional - Password for network log share permissions
 
 .NOTES
-  Version:          1.0
+  Version:          1.1
   Author:           Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
   Creation Date:    08/08/2019
-  Purpose/Change:   Initial script development
-  
+  Purpose/Change:
+    1.0 Initial script development
+    1.1 Updated formatting
+
+
 #>
 
 [cmdletbinding()]
 param (
+    [Parameter()]
     [string]$NetworkLogPath = "\\CM01\FeatureUpdateLogs$", #In case the log path isn't set
+
+    [Parameter()]
     [string]$LocalFileRoot = "C:\~FeatureUpdateTemp",
+
+    [Parameter()]
     [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-ProcessLogs.log",
+
+    [Parameter()]
     [string]$CallingScript = "SetupComplete",
+
+    [Parameter()]
     [string]$Type = "FeatureUpdate",
+
+    [Parameter()]
     [switch]$SkipSetupDiag=$False,
+
+    [Parameter()]
     [string]$Username,
+
+    [Parameter()]
     [string]$Password
 )
 
@@ -57,7 +75,7 @@ $main = {
         $DateString = Get-Date -Format yyyyMMdd_HHmmss
         $LocalLogRoot = Join-Path -Path $LocalFileRoot -ChildPath "Logs"
         $LocalScriptRoot = Join-Path -Path $LocalFileRoot -ChildPath "Scripts"
-        
+
         #Run SetupDiag and Parse Results
         $Status = Process-SetupDiag -LocalLogRoot $LocalLogRoot -CallingScript $CallingScript -SkipSetupDiag:$SkipSetupDiag
 
@@ -143,7 +161,7 @@ Function Authenticate {
         $Auth = $true
     }
     Catch {
-        Write-Host "Auth failed when connecting to network share $($UNCPath)" 
+        Write-Host "Auth failed when connecting to network share $($UNCPath)"
         $Auth = $false
     }
     Return $Auth
@@ -180,7 +198,7 @@ Function Copy-LogsToNetwork {
 
         If ($AuthPassed) {
             ProcessContent -SourcePath $SourcePath -DestPath $BasePath -DestChildFolder $DestChild
-        } 
+        }
         Else {
             Write-Host "Network Auth Failed. Check Local Logs."
         }
@@ -191,7 +209,7 @@ Function Copy-LogsToNetwork {
     }
 }
 
-  
+
 #endregion #######################
 
 # Calling the main function

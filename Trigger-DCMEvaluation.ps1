@@ -13,22 +13,33 @@
     The name of the method to call on the WMI Object
 
 .NOTES
-  Version:          1.0
+  Version:          1.1
   Author:           Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
   Creation Date:    08/08/2019
-  Purpose/Change:   Initial script development
-  
+  Purpose/Change:
+    1.0 Initial script development
+    1.1 Updated Formatting
+
  #>
 
 Function Trigger-DCMEvaluation {
-Param(
-    $BaseLineName="YourBaselineName",
-    $NameSpace = "root\ccm\dcm",
-    $ClassName = "SMS_DesiredConfiguration",
-    $MethodName = "TriggerEvaluation"
-)
+    [cmdletbinding()]
+    Param(
+        [Parameter()]
+        [string]$BaseLineName="YourBaselineName",
+
+        [Parameter()]
+        [string]$NameSpace = "root\ccm\dcm",
+
+        [Parameter()]
+        [string]$ClassName = "SMS_DesiredConfiguration",
+
+        [Parameter()]
+        [string]$MethodName = "TriggerEvaluation"
+    )
+
     $Status = @{
         0 = "NonCompliant"
         1 = "Compliant"
@@ -72,6 +83,6 @@ Param(
         }
     }
     Catch {
-        Return $Error[0]
+        Return $_
     }
 }
