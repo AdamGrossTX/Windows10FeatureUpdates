@@ -36,7 +36,7 @@
       Char16Props
 
 .NOTES
-  Version:        1.2
+  Version:        1.3
   Author:         Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
@@ -45,7 +45,7 @@
    1.0 Initial Release
    1.1 Removed DateCollected. Updated to work on PowerShell 7 and remove WMI calls
    1.2 Updated to be more modular/re-usable.
-
+   1.3 Reworked using base template model
 
 .EXAMPLE
 Populate the values in $InvArgs. This gets sent to Get-CustInventory as a splat. Change the name of the arguments in the Main region at the end.
@@ -372,7 +372,7 @@ Function Set-CustWMIClass {
             }
          }
       }
-      $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $ClassName -Arguments $ValueList -ErrorAction Continue
+      $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $ClassName -Arguments $ValueList -ErrorAction SilentlyContinue
       If(!($NewInstance)) {Write-Host "Failed to create new entry. Error: $($Error[0])"}
       Return $NewInstance
    }
