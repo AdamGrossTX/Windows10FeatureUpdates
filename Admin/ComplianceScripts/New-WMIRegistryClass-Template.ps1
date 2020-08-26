@@ -373,6 +373,7 @@ Function Set-CustWMIClass {
          }
       }
       $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $ClassName -Arguments $ValueList -ErrorAction Continue
+      If(!($NewInstance)) {Write-Host "Failed to create new entry. Error: $($Error[0])"}
       Return $NewInstance
    }
    Catch {
