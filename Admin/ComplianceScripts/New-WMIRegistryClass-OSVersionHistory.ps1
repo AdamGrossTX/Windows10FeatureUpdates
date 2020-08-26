@@ -1,173 +1,5 @@
 <#
 .SYNOPSIS
-   Create and populate WMI Class instances with Windows Source OS and CurrentVersion keys
-.DESCRIPTION
-   Use to create a custom WMI Class from a list of registry keys
-.PARAMETER NameSpace
-    WMI Namespace where new class will be created
-.PARAMETER ClassName
-    New WMI class name. Be sure to use a unique class since an existing class will be overwitten.
-.PARAMETER CombineKeys
-    Set this to True to merge all registry keys into a single WMI instance. Set to False to create new instances for each registry key
-.PARAMETER RegistryKeyList
-    A list of registry key paths that will be collected to be stored into a new instance of the class.
-.PARAMETER ClassPropertyList
-    An array of value names to be used as class properties.
-.NOTES
-  Version:        1.3
-  Author:         Adam Gross - @AdamGrossTX
-  GitHub:           https://www.github.com/AdamGrossTX
-  WebSite:          https://www.asquaredozen.com
-  Creation Date:  08/09/2019
-  Purpose/Change:
-   1.0 Initial Release
-   1.1 Removed DateCollected. Updated to work on PowerShell 7 and remove WMI calls
-   1.2 Updated to be more modular/re-usable.
-   1.3 Reworked using base template model
-
-#>
-
-
-$InvArgs = @{
-   NameSpace = "root\cimv2"
-   ClassName = "CM_OSVersionHistory"
-   RegistryKeyList = "HKLM:System\Setup\Source OS*","HKLM:SOFTWARE\Microsoft\Windows NT\CurrentVersion"
-   CombineKeys = $false
-   ClassPropertyList = @{
-      "KeyName"                   = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("key", "read")
-      }
-      "BaseBuildRevisionNumber"   = @{
-         "type"       = [System.Management.CimType]::UInt32
-         "qualifiers" = @("read")
-      }
-      "BuildBranch"               = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "BuildGUID"                 = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "BuildLab"                  = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "BuildLabEx"                = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "CompositionEditionID"      = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "CurrentBuild"              = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "CurrentBuildNumber"        = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "CurrentMajorVersionNumber" = @{
-         "type"       = [System.Management.CimType]::UInt32
-         "qualifiers" = @("read")
-      }
-      "CurrentMinorVersionNumber" = @{
-         "type"       = [System.Management.CimType]::UInt32
-         "qualifiers" = @("read")
-      }
-      "CurrentType"               = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "CurrentVersion"            = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      #Excluding these since they are binary keys and add little value
-      #"DigitalProductId" = @{
-      #   "type" = [System.Management.CimType]::String
-      #   "qualifiers" = @("read")
-      #}
-      #"DigitalProductId4" = @{
-      #   "type" = [System.Management.CimType]::String
-      #   "qualifiers" = @("read")
-      #}
-      "EditionID"                 = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "EditionSubManufacturer"    = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "EditionSubstring"          = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "EditionSubVersion"         = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "InstallationType"          = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "InstallDate"               = @{
-         "type"       = [System.Management.CimType]::UInt32
-         "qualifiers" = @("read")
-      }
-      "InstallTime"               = @{
-         "type"       = [System.Management.CimType]::UInt64
-         "qualifiers" = @("read")
-      }
-      "MigrationScope"            = @{
-         "type"       = [System.Management.CimType]::UInt32
-         "qualifiers" = @("read")
-      }
-      "PathName"                  = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "ProductId"                 = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "ProductName"               = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "RegisteredOrganization"    = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "RegisteredOwner"           = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "ReleaseId"                 = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "SoftwareType"              = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "SystemRoot"                = @{
-         "type"       = [System.Management.CimType]::String
-         "qualifiers" = @("read")
-      }
-      "UBR"                       = @{
-         "type"       = [System.Management.CimType]::UInt32
-         "qualifiers" = @("read")
-      }
-   }
-}
-
-<#
-.SYNOPSIS
    Create and populate WMI Class instances with Registry Key values for ConfigMgr inventory.
 .DESCRIPTION
    This script is designed to be re-usable and used in a ConfigMgr CI. Simply update $InvArgs with the information needed to collect data from one or more Registry keys.
@@ -204,7 +36,7 @@ $InvArgs = @{
       Char16Props
 
 .NOTES
-  Version:        1.2
+  Version:        1.3
   Author:         Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
@@ -212,7 +44,8 @@ $InvArgs = @{
   Purpose/Change:
    1.0 Initial Release
    1.1 Removed DateCollected. Updated to work on PowerShell 7 and remove WMI calls
-   1.2 Updated to be more modular/re-usable.
+   1.2 Updated to be more modular/re-usable
+   1.3 Reworked using base template model
 
 
 .EXAMPLE
