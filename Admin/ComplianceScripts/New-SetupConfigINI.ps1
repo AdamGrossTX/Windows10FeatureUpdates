@@ -34,7 +34,7 @@
     The network share to copy logs on failure
 
 .NOTES
-  Version:        1.1
+  Version:        1.2
   Author:         Adam Gross - @AdamGrossTX
   GitHub:           https://www.github.com/AdamGrossTX
   WebSite:          https://www.asquaredozen.com
@@ -42,6 +42,7 @@
   Purpose/Change:
     1.0 Initial Script
     1.1 Updated to support Windows 10 2004 options
+    1.2 Renamed
 
 .EXAMPLE
     Since this will be called in SCCM, set all values in the Param section instead of passing in the command line args.
@@ -52,28 +53,28 @@ Param (
     [Parameter()]
     [string]
     $ActualValue, # The incoming compliance value from the CI.
-    #This is an ordered, nested dictionary. Each section will have a nested dictionary with name/value pairs
 
     [Parameter()]
-    [bool]$Remediate = $True,
+    [bool]$Remediate,
+
+    [Parameter()]
+    [string]$FuTempDir,
+
+    [Parameter()]
+    [string]$LogPath,
+
+    [Parameter()]
+    [switch]$AlwaysReWrite,
 
     [Parameter()]
     [string]$SourceIniFile = "$($env:SystemDrive)\Users\Default\AppData\Local\Microsoft\Windows\WSUS\SetupConfig.ini",
 
     [Parameter()]
-    [string]$FuTempDir = "C:\~FeatureUpdateTemp",
-
-    [Parameter()]
-    [string]$LogPath = "\\CM01\FeatureUpdateLogs$\FailedLogs",
-
-    [Parameter()]
-    [string]$DestIniFile = "$($env:SystemDrive)\Users\Default\AppData\Local\Microsoft\Windows\WSUS\SetupConfig.ini",
-
-    [Parameter()]
-    [switch]$AlwaysReWrite,
+    [string]$DestIniFile = $SourceIniFile,
 
     #Any options listed in the docs as available for the TARGET OS can be used here
     #https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-setup-command-line-options
+    #This is an ordered, nested dictionary. Each section will have a nested dictionary with name/value pairs
     [Parameter()]
     [System.Collections.Specialized.OrderedDictionary]$AddSettings = [ordered]@{
         "SetupConfig" = [ordered]@{

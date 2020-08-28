@@ -1,1 +1,6 @@
 Feature Update Script Process Overview.docx
+Scripts/SetupDiag.exe
+Misc - Exclude/New-WMIRegistryClass-Template.ps1
+.vscode/settings.json
+Misc - Exclude/Powershell.exe -ExecutionPolicy ByPass -.ps1
+Misc - Exclude/ArgsList.ps1
