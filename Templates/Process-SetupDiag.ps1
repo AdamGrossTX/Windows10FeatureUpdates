@@ -29,9 +29,9 @@
 Function Process-SetupDiag {
     [cmdletbinding()]
     param (
-        [string]$LocalLogRoot = "C:\~FeatureUpdateTemp\Logs",
+        [string]$LocalLogRoot,
         [string]$CallingScript = "None",
-        [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-ProcessSetupDiag.log",
+        [string]$TranscriptPath,
         [string]$SetupDiagPath = $PSScriptRoot,
         [switch]$SkipSetupDiag,
         [switch]$SkipWriteRegKey

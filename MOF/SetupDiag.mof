@@ -1,0 +1,90 @@
+#pragma namespace ("\\\\.\\root\\cimv2")
+instance of __Namespace
+{
+    Name = "SMS" ;
+};
+#pragma namespace ("\\\\.\\root\\cimv2\\SMS")
+instance of __Namespace
+{
+    Name = "INV_TEMP" ;
+};
+#pragma namespace ("\\\\.\\root\\cimv2\\SMS\\INV_TEMP")
+
+//=============================================================================
+// SMS_Class_Template must be the parent of every class
+//=============================================================================
+class SMS_Class_Template
+{
+};
+
+[ SMS_Report (TRUE),
+  SMS_Group_Name ("Feature Update - SetupDiag Results"),
+  SMS_Class_ID ("MICROSOFT|CM_SETUPDIAG|1.0"),
+  Namespace ("root\\\\cimv2") ]
+class CM_SetupDiag : SMS_Class_Template
+{
+    [ SMS_Report (TRUE) ]
+    String     CustomSetupDiagResult;
+    [ SMS_Report (TRUE) ]
+    String     DateTime;
+    [ SMS_Report (TRUE) ]
+    String     DeviceDescription;
+    [ SMS_Report (TRUE) ]
+    String     DriverVersion;
+    [ SMS_Report (TRUE) ]
+    UInt32     FailureCount;
+    [ SMS_Report (TRUE), SMS_Width ("1500") ]
+    String     FailureData;
+    [ SMS_Report (TRUE), SMS_Width ("1500") ]
+    String     FailureDetails;
+    [ SMS_Report (TRUE) ]
+    String     HardwareId;
+    [ SMS_Report (TRUE) ]
+    String     HostOSVersion;
+    [ SMS_Report (TRUE) ]
+    String     InfName;
+    [ SMS_Report (TRUE) ]
+    UInt32     InstallAttempts;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupOperation;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupOperationElapsed;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupOperationEndTime;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupOperationStartTime;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupPhase;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupPhaseElapsed;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupPhaseEndTime;
+    [ SMS_Report (TRUE) ]
+    String     LastSetupPhaseStartTime;
+    [ SMS_Report (TRUE) ]
+    String     OperationCompletedSuccessfully;
+    [ SMS_Report (TRUE) ]
+    String     ProfileGuid;
+    [ SMS_Report (TRUE) ]
+    String     ProfileName;
+    [ SMS_Report (TRUE) ]
+    String     RecoveryStartTime;
+    [ SMS_Report (TRUE), SMS_Width ("1500") ]
+    String     Remediation;
+    [ SMS_Report (TRUE) ]
+    String     RollbackElapsedTime;
+    [ SMS_Report (TRUE) ]
+    String     RollbackEndTime;
+    [ SMS_Report (TRUE) ]
+    String     RollbackStartTime;
+    [ SMS_Report (TRUE) ]
+    String     SetupDiagVersion;
+    [ SMS_Report (TRUE) ]
+    String     TargetOSVersion;
+    [ SMS_Report (TRUE) ]
+    String     UpgradeElapsedTime;
+    [ SMS_Report (TRUE) ]
+    String     UpgradeEndTime;
+    [ SMS_Report (TRUE) ]
+    String     UpgradeStartTime;
+};

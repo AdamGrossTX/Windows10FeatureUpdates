@@ -44,57 +44,53 @@
  Param (
 
     [Parameter()]
-    [string]$GUID = "6ace78a3-504c-4e45-b0e3-2e72fbeacf87",
+    [string]$GUID = "0d47daf4-8c3b-43e9-9b10-36b36cfd7c00",
 
     [Parameter()]
-    [string]$TempDirPath = "C:\~FeatureUpdateTemp",
+    [string]$Path = "C:\~FeatureUpdateTemp",
 
     [Parameter()]
     [switch]$RemoveOnly,
 
     [Parameter()]
-    [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-CopyFiles.log",
+    [string]$TranscriptPath = "%windir%\CCM\Logs\FeatureUpdate-CopyFiles.log",
 
     [Parameter()]
-    [string]$BaselineName = "Feature Update Files"
+    [string]$BaselineName = "Feature Update - Feature Update Files"
 )
 #Import the Process-Content script/function. This file should be present in the folder where you are launching this file from, or you need to change the path.
-. (Join-Path -Path $PSScriptRoot -ChildPath ".\Scripts\Process-Content.ps1")
+. (Join-Path -Path $PSScriptRoot -ChildPath ".\Scripts\Process-Content.ps1" -ErrorAction SilentlyContinue)
 . (Join-Path -Path $PSScriptRoot -ChildPath ".\Trigger-DCMEvaluation.ps1" -ErrorAction SilentlyContinue)
 
 Start-Transcript -Path $TranscriptPath -Append -Force -ErrorAction SilentlyContinue
-$Main = {
-
-    $Sources = @{
-        "Update" = @{
-            SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Update")
-            DestPath = "c:\Windows\System32\update\run"
-            DestChildFolder = $GUID
-            RemoveLevel = 'Root'
-        }
-        "Scripts" = @{
-            SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Scripts")
-            DestPath = $TempDirPath
-            DestChildFolder = "Scripts"
-            RemoveLevel = 'Child'
-            Hide = $True
-        }
+$Sources = @{
+    "Update" = @{
+        SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Update")
+        DestPath = "c:\Windows\System32\update\run"
+        DestChildFolder = $GUID
+        RemoveLevel = 'Root'
     }
-
-    ForEach($Key in $Sources.keys) {
-        $ArgList = $Sources[$Key]
-        If($RemoveOnly.IsPresent) {
-            $ArgList.Remove("SourcePath")
-            $ArgList.Remove("Hide")
-            $ArgList["RemoveOnly"] = $True
-        }
-        ProcessContent @ArgList -ErrorAction Continue
-    }
-
-    If($BaselineName) {
-        Trigger-DCMEvaluation -BaseLine $BaselineName -ErrorAction SilentlyContinue
+    "Scripts" = @{
+        SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Scripts")
+        DestPath = $TempDirPath
+        DestChildFolder = "Scripts"
+        RemoveLevel = 'Child'
+        Hide = $True
     }
 }
 
-&$main
+ForEach($Key in $Sources.keys) {
+    $ArgList = $Sources[$Key]
+    If($RemoveOnly.IsPresent) {
+        $ArgList.Remove("SourcePath")
+        $ArgList.Remove("Hide")
+        $ArgList["RemoveOnly"] = $True
+    }
+    ProcessContent @ArgList -ErrorAction Continue
+}
+
+If($BaselineName) {
+    Trigger-DCMEvaluation -BaseLine $BaselineName -ErrorAction SilentlyContinue
+}
+
 Stop-Transcript

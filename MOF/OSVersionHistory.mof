@@ -1,0 +1,86 @@
+#pragma namespace ("\\\\.\\root\\cimv2")
+instance of __Namespace
+{
+    Name = "SMS" ;
+};
+#pragma namespace ("\\\\.\\root\\cimv2\\SMS")
+instance of __Namespace
+{
+    Name = "INV_TEMP" ;
+};
+#pragma namespace ("\\\\.\\root\\cimv2\\SMS\\INV_TEMP")
+
+//=============================================================================
+// SMS_Class_Template must be the parent of every class
+//=============================================================================
+class SMS_Class_Template
+{
+};
+
+[ SMS_Report (TRUE),
+  SMS_Group_Name ("Feature Update - OS Version History"),
+  SMS_Class_ID ("MICROSOFT|CM_OSVERSIONHISTORY|1.0"),
+  Namespace ("root\\\\cimv2") ]
+class CM_OSVersionHistory : SMS_Class_Template
+{
+    [ SMS_Report (TRUE), key ]
+    String     KeyName;
+    [ SMS_Report (TRUE) ]
+    UInt32     BaseBuildRevisionNumber;
+    [ SMS_Report (TRUE) ]
+    String     BuildBranch;
+    [ SMS_Report (TRUE) ]
+    String     BuildGUID;
+    [ SMS_Report (TRUE) ]
+    String     BuildLab;
+    [ SMS_Report (TRUE) ]
+    String     BuildLabEx;
+    [ SMS_Report (TRUE) ]
+    String     CompositionEditionID;
+    [ SMS_Report (TRUE) ]
+    String     CurrentBuild;
+    [ SMS_Report (TRUE) ]
+    String     CurrentBuildNumber;
+    [ SMS_Report (TRUE) ]
+    UInt32     CurrentMajorVersionNumber;
+    [ SMS_Report (TRUE) ]
+    UInt32     CurrentMinorVersionNumber;
+    [ SMS_Report (TRUE) ]
+    String     CurrentType;
+    [ SMS_Report (TRUE) ]
+    String     CurrentVersion;
+    [ SMS_Report (TRUE) ]
+    String     EditionID;
+    [ SMS_Report (TRUE) ]
+    String     EditionSubManufacturer;
+    [ SMS_Report (TRUE) ]
+    String     EditionSubstring;
+    [ SMS_Report (TRUE) ]
+    String     EditionSubVersion;
+    [ SMS_Report (TRUE) ]
+    String     InstallationType;
+    [ SMS_Report (TRUE) ]
+    UInt32     InstallDate;
+    [ SMS_Report (TRUE) ]
+    UInt64     InstallTime;
+    [ SMS_Report (TRUE) ]
+    UInt32     MigrationScope;
+    [ SMS_Report (TRUE) ]
+    String     PathName;
+    [ SMS_Report (TRUE) ]
+    String     ProductId;
+    [ SMS_Report (TRUE) ]
+    String     ProductName;
+    [ SMS_Report (TRUE) ]
+    String     RegisteredOrganization;
+    [ SMS_Report (TRUE) ]
+    String     RegisteredOwner;
+    [ SMS_Report (TRUE) ]
+    String     ReleaseId;
+    [ SMS_Report (TRUE) ]
+    String     SoftwareType;
+    [ SMS_Report (TRUE) ]
+    String     SystemRoot;
+    [ SMS_Report (TRUE) ]
+    UInt32     UBR;
+};

@@ -4,7 +4,7 @@
 .DESCRIPTION
     Gathers Feature Update logs, runs setupdiag.exe and parses it, then copies the results to a network share
 .PARAMETER NetworkLogPath
-    Path to network share that EVERYONE has full control to. If you secure this share, the UserName and Password params are also required
+    Path to network share that EVERYONE can create and delete files and folders on.
 .PARAMETER LocalLogRoot
     Local path where logs will be gathered to. If network share is unavailable, logs will be copied here for local review.
 .PARAMETER TranscriptPath
@@ -13,10 +13,6 @@
     The deployment type that was performed. You may not need/care. We have several deployment types and this value is included in the output folder name
 .PARAMETER SkipSetupDiag
     Don't run SetupDiag
-.PARAMETER Username
-    Optional - Username for network log share permissions
-.PARAMETER Password
-    Optional - Password for network log share permissions
 
 .NOTES
   Version:          1.1
@@ -27,20 +23,19 @@
   Purpose/Change:
     1.0 Initial script development
     1.1 Updated formatting
-
-
+    1.2 Removed Auth function
 #>
 
 [cmdletbinding()]
 param (
     [Parameter()]
-    [string]$NetworkLogPath = "\\CM01\FeatureUpdateLogs$", #In case the log path isn't set
+    [string]$NetworkLogPath,
 
     [Parameter()]
-    [string]$LocalFileRoot = "C:\~FeatureUpdateTemp",
+    [string]$LocalFileRoot,
 
     [Parameter()]
-    [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-ProcessLogs.log",
+    [string]$TranscriptPath,
 
     [Parameter()]
     [string]$CallingScript = "SetupComplete",
@@ -49,13 +44,7 @@ param (
     [string]$Type = "FeatureUpdate",
 
     [Parameter()]
-    [switch]$SkipSetupDiag=$False,
-
-    [Parameter()]
-    [string]$Username,
-
-    [Parameter()]
-    [string]$Password
+    [switch]$SkipSetupDiag=$False
 )
 
 #Import the Process-Content script/function. This file should be present in the folder where you are launching this file from, or you need to change the path.
@@ -129,7 +118,7 @@ $main = {
 
     }
     Catch {
-        Write-Host $Error[0]
+        Throw $_
     }
 
     Write-Host "Copy Logs Completed."
@@ -137,36 +126,9 @@ $main = {
 
 }
 
-#endregion #######################
+#endregion
 
-#region functions#################
-
-Function Authenticate {
-    Param (
-        [string]$UNCPath = $(Throw "An UNCPath must be specified"),
-        [string]$User,
-        [string]$PW
-    )
-
-    $Auth = $false
-    Try {
-        $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-        $pinfo.FileName = "net.exe"
-        $pinfo.UseShellExecute = $false
-        $pinfo.Arguments = "USE $($UNCPath) /USER:$($User) $($PW)"
-        $p = New-Object System.Diagnostics.Process
-        $p.StartInfo = $pinfo
-        $p.Start() | Out-Null
-        $p.WaitForExit()
-        $Auth = $true
-    }
-    Catch {
-        Write-Host "Auth failed when connecting to network share $($UNCPath)"
-        $Auth = $false
-    }
-    Return $Auth
-}
-
+#region functions
 Function Copy-LogsToNetwork {
     Param (
         [string]$SourcePath,
@@ -183,36 +145,17 @@ Function Copy-LogsToNetwork {
 
     Try {
 
-        If($PreAuth) {
-            $AuthPassed = Authenticate -UNCPath $NetworkLogPath -User $Username -PW $Password
-        }
-        Else {
-            $AuthPassed = $True
-        }
-
         $BasePath = "{0}\{1}\" -f $RootDestPath,$ComputerName
         $Fields = $Date,$Type,$Status,$BuildNumber,$ErrorCode,$ErrorExCode
         $DestChild = (($Fields | where-object { $_ }) -join "_")
-
         Write-Host "Copying $($LocalLogRoot) to $($OutputLogPath)"
-
-        If ($AuthPassed) {
-            ProcessContent -SourcePath $SourcePath -DestPath $BasePath -DestChildFolder $DestChild
-        }
-        Else {
-            Write-Host "Network Auth Failed. Check Local Logs."
-        }
+        ProcessContent -SourcePath $SourcePath -DestPath $BasePath -DestChildFolder $DestChild
     }
     Catch {
         Write-Host "An Error occurred copying logs"
-        Throw $Error
+        Throw $_
     }
 }
+#endregion
 
-
-#endregion #######################
-
-# Calling the main function
-&$main
-# ------------------------------------------------------------------------------------------------
-# END
+& $main

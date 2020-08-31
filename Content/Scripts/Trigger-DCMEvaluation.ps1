@@ -62,13 +62,13 @@ Function Trigger-DCMEvaluation {
         If ($Baselines) {
             $Results = @()
             ForEach ($Baseline in $Baselines) {
-                $Args = @{
+                $ArgsList = @{
                     Name = $BaseLine.Name
                     Version = $Baseline.Version
                     IsMachineTarget = $True
                     IsEnforced = $True
                 }
-                $BaseLine | Invoke-CimMethod -MethodName $MethodName -Arguments $args | Out-Null
+                $BaseLine | Invoke-CimMethod -MethodName $MethodName -Arguments $ArgsList | Out-Null
 
                 $Filter = "DisplayName='{0}'" -f $BaseLine.DisplayName
                 [int]$ComplianceStatus = (Get-CIMInstance -Namespace $NameSpace -ClassName $ClassName -Filter $Filter).LastComplianceStatus
