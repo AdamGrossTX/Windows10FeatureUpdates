@@ -91,6 +91,11 @@ After running SetupFUFramework you must do the following:
 - [ ] Create new Feature Update deployment collection using the  Baseline Deployment Compliant collection as the limiting collection.
 - [ ] Use this new collection as your limiting collection for all Feature Update deployments. It will ensure that you don't deploy to devices without Feature Update files staged.
 
+## Reporting
+Use the Power Bi template in the Reporting folder to report on the custom inventory that is generated after installing the MOFs and deploying the CIs/Baselines.
+
+![Power BI Report](https://github.com/AdamGrossTX/Windows10FeatureUpdates/Images/PowerBI%20Screenshot.jpg)
+
 ## Demos
 
 [Running SetupFUFramework](https://youtu.be/8g3M_ekYvQg)  
