@@ -94,7 +94,7 @@ After running SetupFUFramework you must do the following:
 ## Reporting
 Use the Power Bi template in the Reporting folder to report on the custom inventory that is generated after installing the MOFs and deploying the CIs/Baselines.
 
-![Power BI Report](https://github.com/AdamGrossTX/Windows10FeatureUpdates/Images/PowerBI%20Screenshot.jpg)
+![Power BI Report](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20Screenshot.jpg)
 
 ## Demos
 
