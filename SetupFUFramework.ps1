@@ -269,11 +269,11 @@ Try {
         SoftwareVersion = "1.0"
         AutoInstall = $true
     }
+
     $ApplicationDeploymentType = @{
         ContentLocation = $ContentLocation
         DeploymentTypeName = "Copy Feature Update Files to Client"
         InstallCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`""
-        RepairCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`""
         LogonRequirementType = [Microsoft.ConfigurationManagement.Cmdlets.AppMan.Commands.LogonRequirementType]::WhetherOrNotUserLoggedOn
         UninstallCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -RemoveOnly"
         UserInteractionMode = [Microsoft.ConfigurationManagement.ApplicationManagement.UserInteractionMode]::Hidden
@@ -281,6 +281,13 @@ Try {
         RebootBehavior = [Microsoft.ConfigurationManagement.Cmdlets.AppMan.Commands.RebootBehavior]::BasedOnExitCode
         Comment = $null
     }
+
+    #Test for new ConfigMgr build that supports the RepairCommand
+    $SupportsRepair = Get-Command -Name Add-CMScriptDeploymentType | Where-Object {$_.Parameters.Keys -eq "RepairCommand"}
+    If($SupportsRepair) {
+        $ApplicationDeploymentType["RepairCommand"] = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`""
+    }
+
     $GUIDFolderDetectionClause = @{
         DirectoryName = $FUFilesGUID
         Path = "%Windir%\System32\update\run"
@@ -320,7 +327,6 @@ Try {
     $logic3=$cla3.Setting.LogicalName
     $AppDeploymentType = $NewApplication | Add-CMScriptDeploymentType @ApplicationDeploymentType -AddDetectionClause ($cla1,$cla2,$cla3) -DetectionClauseConnector @{LogicalName=$logic2;Connector="and"},@{LogicalName=$logic3;Connector="and"}
     Write-Host $Script:tick -ForegroundColor green
-    
     #endregion
     
     #region CI Config
