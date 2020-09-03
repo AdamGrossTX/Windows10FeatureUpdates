@@ -29,13 +29,13 @@
 [cmdletbinding()]
 param (
     [Parameter()]
-    [string]$NetworkLogPath = "\\CM01.ASD.NET\FeatureUpdateLogs",
+    [string]$NetworkLogPath = "=",
 
     [Parameter()]
-    [string]$LocalFileRoot = "C:\~FeatureUpdateTemp",
+    [string]$LocalFileRoot = "\\media.cpchem.net\osd$\FUApplication",
 
     [Parameter()]
-    [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-Process-FeatureUpdateLogs.log",
+    [string]$TranscriptPath = "\\media.cpchem.net\osd$\FUApplication\FeatureUpdate-CopyFiles.log",
 
     [Parameter()]
     [string]$CallingScript = "SetupComplete",

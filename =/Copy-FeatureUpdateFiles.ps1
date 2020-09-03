@@ -53,7 +53,7 @@
     [switch]$RemoveOnly,
 
     [Parameter()]
-    [string]$TranscriptPath = "%windir%\CCM\Logs\FeatureUpdate-CopyFiles.log",
+    [string]$TranscriptPath = "$($env:windir)\CCM\Logs\FeatureUpdate-CopyFiles.log",
 
     [Parameter()]
     [string]$BaselineName = "Feature Update - Feature Update Files"

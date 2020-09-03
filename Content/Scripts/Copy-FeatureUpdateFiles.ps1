@@ -44,23 +44,23 @@
  Param (
 
     [Parameter()]
-    [string]$GUID = "0d47daf4-8c3b-43e9-9b10-36b36cfd7c00",
+    [string]$GUID,
 
     [Parameter()]
-    [string]$Path = "C:\~FeatureUpdateTemp",
+    [string]$Path,
 
     [Parameter()]
     [switch]$RemoveOnly,
 
     [Parameter()]
-    [string]$TranscriptPath = "%windir%\CCM\Logs\FeatureUpdate-CopyFiles.log",
+    [string]$TranscriptPath,
 
     [Parameter()]
-    [string]$BaselineName = "Feature Update - Feature Update Files"
+    [string]$BaselineName
 )
 #Import the Process-Content script/function. This file should be present in the folder where you are launching this file from, or you need to change the path.
 . (Join-Path -Path $PSScriptRoot -ChildPath ".\Scripts\Process-Content.ps1" -ErrorAction SilentlyContinue)
-. (Join-Path -Path $PSScriptRoot -ChildPath ".\Trigger-DCMEvaluation.ps1" -ErrorAction SilentlyContinue)
+. (Join-Path -Path $PSScriptRoot -ChildPath ".\Scripts\Trigger-DCMEvaluation.ps1" -ErrorAction SilentlyContinue)
 
 Start-Transcript -Path $TranscriptPath -Append -Force -ErrorAction SilentlyContinue
 $Sources = @{
@@ -72,7 +72,7 @@ $Sources = @{
     }
     "Scripts" = @{
         SourcePath = (Join-Path -Path $PSScriptRoot -ChildPath "Scripts")
-        DestPath = $TempDirPath
+        DestPath = $Path
         DestChildFolder = "Scripts"
         RemoveLevel = 'Child'
         Hide = $True

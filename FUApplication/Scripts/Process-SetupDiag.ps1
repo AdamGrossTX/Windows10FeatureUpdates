@@ -31,7 +31,7 @@ Function Process-SetupDiag {
     param (
         [string]$LocalLogRoot = "C:\~FeatureUpdateTemp\Logs",
         [string]$CallingScript = "None",
-        [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-ProcessSetupDiag.log",
+        [string]$TranscriptPath = "C:\Windows\CCM\Logs\FeatureUpdate-Process-SetupDiag.log",
         [string]$SetupDiagPath = $PSScriptRoot,
         [switch]$SkipSetupDiag,
         [switch]$SkipWriteRegKey
@@ -40,9 +40,7 @@ Function Process-SetupDiag {
         $Status = $CallingScript
 
         #cleanup any existing logs
-        Remove-Item $TranscriptPath -Force -recurse -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
-        Remove-Item "$($LocalLogRoot)\Logs*.zip" -Force -recurse -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
-        Remove-Item "$($LocalLogRoot)\SetupDiag*.log" -Force -recurse -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+        Get-ChildItem -Path $TranscriptPath,$LocalLogRoot | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 
         Start-Transcript -Path $TranscriptPath -Force -Append -NoClobber -ErrorAction Continue | Out-Null
 
@@ -67,8 +65,8 @@ Function Process-SetupDiag {
             }
 
 
+            $SetupAct = Join-Path -Path $PantherLogPath -ChildPath "setupact.log"
             If($CallingScript -eq "SetupComplete") {
-                $SetupAct = Join-Path -Path $PantherLogPath -ChildPath "setupact.log"
                 $startDate = Get-Date
                 $LogsFinalized = $False
 
@@ -92,7 +90,21 @@ Function Process-SetupDiag {
                     Write-Host "Timed out waiting for logs to be finalized. Will attempt to run SetupDiag anyway."
                 }
             }
+        Else {
+            $LastLogLine = Get-Content -Path $SetupAct -Tail 1 -ErrorAction SilentlyContinue
+                If($LastLogLine -Like "*Ending TrustedInstaller finalization.")
+                {
+                    Write-Host "Logs have been finalized. Proceeding to run SetupDiag."
+                    $LogsFinalized = $True
+                }
+                Else {
+                    Write-Host "Waiting for logs to be finalized."
+                    Write-host "LastLogLine: $($LastLogLine)"
+                    Start-Sleep -Seconds 10
+                    $LogsFinalized = $False
+                }
         }
+    }
 
         #Do work
         Write-Host "Running SetupDiag to gather deployment results."
@@ -107,7 +119,7 @@ Function Process-SetupDiag {
                     Write-Host "Setupdiag.exe not found."
                 }
             }
-            [XML]$xml = Get-Content -Path $ResultsXMLPath -ErrorAction Stop
+            [XML]$xml = Get-Content -Path $ResultsXMLPath -ErrorAction SilentlyContinue
         }
         Catch {
             Write-Host "An error occurred running SetupDiag."
@@ -116,59 +128,70 @@ Function Process-SetupDiag {
 
         Write-Host "Parsing SetupDiag Results."
         Try {
+            If(!($xml) -and $LogsFinalized -eq $True) {
+                Write-Host "No results found. Should be a bare metal."
+                $Status = "Success"
+            } 
+            Else {
 
-            $XMLResults = $xml.SetupDiag
-            $ResultsList = @{}
-            $ResultsList["ErrorProfile"] = $XMLResults.ProfileName
-            $ResultsList["Remediation"] = $XMLResults.Remediation
+                $ResultsList = @{}
+                $XMLResults = $xml.SetupDiag
+                $ResultsList["ErrorProfile"] = $XMLResults.ProfileName
+                $ResultsList["Remediation"] = $XMLResults.Remediation
 
-            If($XMLResults.FailureDetails) {
-                $XMLResults.FailureDetails.Split(',').Trim() | ForEach-Object {
-                    If($_ -like "*KB*") {
-                        $key,$value = $_.Split(' ').Trim()
+                If($XMLResults.FailureDetails) {
+                    $XMLResults.FailureDetails.Split(',').Trim() | ForEach-Object {
+                        If($_ -like "*KB*") {
+                            $key,$value = $_.Split(' ').Trim()
+                        }
+                        Else {
+                            $key,$value = $_.Split('=').Trim()
+                        }
+                        $ResultsList[$key] = $value
+                    }
+                }
+
+                If($XMLResults.FailureData) {
+                    $FailureData = $XMLResults.FailureData.Split([Environment]::NewLine)
+                    If($FailureData -like '*SetupDiag reports successful upgrade found.*'){
+                        $ResultsList["UpgradeStatus"] = "Success"
+                    }
+                    ElseIf($FailureData -like '*SetupDiag was unable to match to any known failure signatures.*') {
+                        $ResultsList["UpgradeStatus"] = "NoMatchFound"
                     }
                     Else {
-                        $key,$value = $_.Split('=').Trim()
+                        $ResultsList["UpgradeStatus"] = "Failed"
                     }
-                    $ResultsList[$key] = $value
-                }
-            }
-
-            If($XMLResults.FailureData) {
-                $FailureData = $XMLResults.FailureData.Split([Environment]::NewLine)
-                If($FailureData -like '*SetupDiag reports successful upgrade found.*'){
-                    $ResultsList["UpgradeStatus"] = "Success"
-                }
-                ElseIf($FailureData -like '*SetupDiag was unable to match to any known failure signatures.*') {
-                    $ResultsList["UpgradeStatus"] = "NoMatchFound"
                 }
                 Else {
-                    $ResultsList["UpgradeStatus"] = "Failed"
+                    $ResultsList["UpgradeStatus"] = "Unknown"
                 }
-            }
-            Else {
-                $ResultsList["UpgradeStatus"] = "Unknown"
-            }
 
-            #Export ResultsList to file
-            ForEach($Key in $ResultsList.Keys) {
-                Add-Content -Path $OutputLog -Force -Value ("{0} : {1}" -f $key,($ResultsList[$key] | out-string))
-            }
-            #Add FailureData separately last since it may have multiple lines
-            Add-Content -Path $OutputLog -Force -Value ("{0} : {1}" -f "FailureData",($FailureData | ForEach-Object {"      " + $_} | Out-String))
+                #Export ResultsList to file
+                ForEach($Key in $ResultsList.Keys) {
+                    Add-Content -Path $OutputLog -Force -Value ("{0} : {1}" -f $key,($ResultsList[$key] | out-string))
+                }
+                #Add FailureData separately last since it may have multiple lines
+                Add-Content -Path $OutputLog -Force -Value ("{0} : {1}" -f "FailureData",($FailureData | ForEach-Object {"      " + $_} | Out-String))
 
-            If($ResultsList.UpgradeStatus) {
-                $Status = $ResultsList.UpgradeStatus
-            }
-            Else {
-                $Status = "NoResults"
+                If($ResultsList.UpgradeStatus) {
+                    $Status = $ResultsList.UpgradeStatus
+                }
+                Else {
+                    $Status = "NoResults"
+                }
             }
 
             If(!($SkipWriteRegKey.IsPresent)) {
                 If(Get-Item -Path $SetupDiagKeyPath -ErrorAction SilentlyContinue) {
                     New-ItemProperty -Path $SetupDiagKeyPath -Name $CustomRegKeyName -Value $Status -PropertyType string -Force | Out-Null
                 }
-            }
+                Else {
+                    $NewKey = New-Item -Path $SetupDiagKeyPath -Force
+                    $NewKey | New-ItemProperty -Name $CustomRegKeyName -Value $Status -PropertyType string -Force | Out-Null
+                    $NewKey | New-ItemProperty -Name "ProfileName" -Value 'BareMetal' -PropertyType string -Force | Out-Null
+                }
+            }            
         }
         Catch {
             Write-Host "An error occurred processing SetupDiag results."

@@ -373,9 +373,18 @@ Function Set-CustWMIClass {
             }
          }
       }
-      $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $ClassName -Arguments $ValueList -ErrorAction SilentlyContinue
-      If(!($NewInstance)) {Write-Host "Failed to create new entry. Error: $($Error[0])"}
-      Return $NewInstance
+      If($ValueList.Count -ge 1) {
+        $NewInstance = New-CimInstance -Namespace $NameSpace -ClassName $ClassName -Arguments $ValueList -ErrorAction SilentlyContinue
+      }
+      Else {
+        Throw "No registry entries found. Exiting." 
+      }
+      If($NewInstance) {
+        Return $NewInstance
+     }
+     Else {
+        Throw "Failed to create new entry. Error: $($Error[0])"
+     }
    }
    Catch {
       Throw $_

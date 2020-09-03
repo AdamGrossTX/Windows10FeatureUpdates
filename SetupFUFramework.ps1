@@ -62,19 +62,19 @@ Param (
     [string]$FUTempPath = "C:\~FeatureUpdateTemp",
     [string]$LogPath = "C:\Windows\CCM\Logs",
     [string]$LogPrefix = "FeatureUpdate",
-    [string]$OutputPathRoot = "$($PSScriptRoot)\$($ApplicationFolderName)",
+    [System.IO.DirectoryInfo]$OutputPathRoot = "$($PSScriptRoot)\$($ApplicationFolderName)",
 
-    [System.IO.FileInfo]$ScriptsPath = "$($FUTempPath)\Scripts",
-    [string]$SetupConfigINIScriptPath = "$($PSScriptRoot)\Templates\New-SetupConfigINI.ps1",
-    [string]$OSVersionInvScriptPath = "$($PSScriptRoot)\Templates\New-WMIRegistryClass-OSVersionHistory.ps1",
-    [string]$SetupDiagInvScriptPath = "$($PSScriptRoot)\Templates\New-WMIRegistryClass-SetupDiag.ps1",
-    [string]$SetupDiagDiscoveryScriptPath = "$($PSScriptRoot)\Templates\SetupDiagCI_Dicovery.ps1",
-    [string]$SetupDiagRemediationScriptPath = "$($PSScriptRoot)\Templates\SetupDiagCI_Remediation.ps1",
-    [string]$NoLoggedOnUserDiscoveryScriptPath = "$($PSScriptRoot)\Templates\NoLoggedOnUserCI_Discovery.ps1",
-    [string]$NoLoggedOnUserRemediationScriptPath = "$($PSScriptRoot)\Templates\NoLoggedOnUserCI_Remediation.ps1",
-    [string]$CopyFeatureUpdateFilesScriptPath = "$($PSScriptRoot)\Templates\Copy-FeatureUpdateFiles.ps1",
-    [string]$ProcessFeatureUpdateLogsScriptPath = "$($PSScriptRoot)\Templates\Process-FeatureUpdateLogs.ps1",
-    [string]$ProcessSetupDiagScriptPath = "$($PSScriptRoot)\Templates\Process-SetupDiag.ps1",
+    [System.IO.DirectoryInfo]$ScriptsPath = "$($FUTempPath)\Scripts",
+    [System.IO.FileInfo]$SetupConfigINIScriptPath = "$($PSScriptRoot)\Templates\New-SetupConfigINI.ps1",
+    [System.IO.FileInfo]$OSVersionInvScriptPath = "$($PSScriptRoot)\Templates\New-WMIRegistryClass-OSVersionHistory.ps1",
+    [System.IO.FileInfo]$SetupDiagInvScriptPath = "$($PSScriptRoot)\Templates\New-WMIRegistryClass-SetupDiag.ps1",
+    [System.IO.FileInfo]$SetupDiagDiscoveryScriptPath = "$($PSScriptRoot)\Templates\SetupDiagCI_Dicovery.ps1",
+    [System.IO.FileInfo]$SetupDiagRemediationScriptPath = "$($PSScriptRoot)\Templates\SetupDiagCI_Remediation.ps1",
+    [System.IO.FileInfo]$NoLoggedOnUserDiscoveryScriptPath = "$($PSScriptRoot)\Templates\NoLoggedOnUserCI_Discovery.ps1",
+    [System.IO.FileInfo]$NoLoggedOnUserRemediationScriptPath = "$($PSScriptRoot)\Templates\NoLoggedOnUserCI_Remediation.ps1",
+    [System.IO.FileInfo]$CopyFeatureUpdateFilesScriptPath = "$($PSScriptRoot)\Templates\Copy-FeatureUpdateFiles.ps1",
+    [System.IO.FileInfo]$ProcessFeatureUpdateLogsScriptPath = "$($PSScriptRoot)\Templates\Process-FeatureUpdateLogs.ps1",
+    [System.IO.FileInfo]$ProcessSetupDiagScriptPath = "$($PSScriptRoot)\Templates\Process-SetupDiag.ps1",
 
     #cmdFiles
     [string]$SetupCompleteTemplatePath = "$($PSScriptRoot)\Templates\SetupComplete.cmd",
@@ -127,25 +127,25 @@ Function New-FUCmdFile {
         [string]$LogPrefix = $script:LogPrefix,
         [string]$ScriptsPath = $script:ScriptsPath,
         [string]$ScriptNameAndParams,
-        [string]$OutputFolder,
-        [string]$OutputRoot = $script:OutputPathRoot
+        [System.IO.DirectoryInfo]$OutputFolder,
+        [System.IO.DirectoryInfo]$OutputRoot = $script:OutputPathRoot
 
     )
     try {
+        Write-Host " + Generating $($CommandName).cmd" -ForegroundColor Cyan -NoNewline
         set-location c:
         If(Test-Path $TemplateSource -ErrorAction SilentlyContinue) {
             $NewOutputFolder = Join-Path -Path $OutputRoot -ChildPath $OutputFolder
-            Write-Host " + Generating $($CommandName).cmd in $($NewOutputFolder)" -ForegroundColor Cyan -NoNewline
             New-Item -Path $NewOutputFolder -ItemType Directory -Force | Out-Null
             $TemplateContent = Get-Content -Path $TemplateSource -Raw
             If($TemplateContent) {
                 $NewContent = $TemplateContent.Replace("%%CommandName%%",$CommandName).Replace("%%LogPath%%",$LogPath).Replace("%%LogPrefix%%",$LogPrefix).Replace("%%ScriptsPath%%",$ScriptsPath).Replace("%%ScriptNameAndParams%%",$ScriptNameAndParams)
                 $NewContent | Out-File -FilePath (Join-Path -Path $NewOutputFolder -ChildPath "$($CommandName).cmd") -Force -Encoding Default
-                Write-Host $Script:tick -ForegroundColor green
                 }
             Else {
-                "The template $($TemplateSource) for $($CommandName).cmd could not be found. Exiting."
+                Throw "No content found in template $($TemplateSource). Exiting."
             }
+            Write-Host $Script:tick -ForegroundColor green
         }
         Else {
             Throw "The template $($TemplateSource) for $($CommandName).cmd could not be found. Exiting."
@@ -159,7 +159,8 @@ Function New-FUCmdFile {
 #endregion
 
 Try {
-    $script:tick = [char]0x221a
+    $script:tick = " " + [char]0x221a
+    $script:X = " " + [char]0x0058
     $SetupDiagPath = "$($PSScriptRoot)\Content\Scripts\SetupDiag.exe"
     If(Test-Path -Path $SetupDiagPath -ErrorAction SilentlyContinue) {
         [string]$SetupDiagVersion = (Get-Item -Path $SetupDiagPath).VersionInfo.FileVersionRaw.ToString()
@@ -220,6 +221,7 @@ Try {
 
     #region CMD Creation
     Write-Host "Creating Application Content in $($OutputPathRoot)" -ForegroundColor Cyan
+    
     $NewAppPath = New-Item -Path $OutputPathRoot -ItemType Directory -Force
     New-FUCmdFile @FailureConfig
     New-FUCmdFile @SetupCompleteConfig
@@ -228,27 +230,36 @@ Try {
     New-FUCmdFile @PostUninstallInstallConfig
     New-FUCmdFile @SuccessConfig
 
+    Write-Host " + Creating file from $($ProcessFeatureUpdateLogsScriptPath) template" -ForegroundColor Cyan -NoNewline
     $ProcessLogsContent = Get-Content -Path $ProcessFeatureUpdateLogsScriptPath -raw -ErrorAction SilentlyContinue
     If($ProcessLogsContent) {
-        $NewProcessLogsContent = $ProcessLogsContent.Replace('[string]$NetworkLogPath',"[string]`$NetworkLogPath = `"$($NetworkLogPath)`"").Replace('[string]$LocalFileRoot',"[string]`$LocalFileRoot = `"$($FUTempPath)`"").Replace('[string]$TranscriptPath',"[string]`$TranscriptPath = `"$($LogPath)\FeatureUpdate-CopyFiles.log`"")
-        $NewProcessLogsContent | Out-File "$($OutputPathRoot)\Scripts\Process-FeatureUpdateLogs.ps1" -Encoding ascii
+        $NewProcessLogsContent = $ProcessLogsContent.Replace('[string]$NetworkLogPath',"[string]`$NetworkLogPath = `"$($NetworkLogPath)`"").Replace('[string]$LocalFileRoot',"[string]`$LocalFileRoot = `"$($FUTempPath)`"").Replace('[string]$TranscriptPath',"[string]`$TranscriptPath = `"$($LogPath)\$($LogPrefix)-$($ProcessFeatureUpdateLogsScriptPath.BaseName).log`"")
+        $NewProcessLogsContent | Out-File "$($OutputPathRoot)\Scripts\$($ProcessFeatureUpdateLogsScriptPath.Name)" -Encoding ascii
     }
     Else {
         Throw "Could not find $($ProcessFeatureUpdateLogsScriptPath). Exiting."
     }
+    Write-Host $Script:tick -ForegroundColor green
 
+    Write-Host " + Creating file from $($ProcessSetupDiagScriptPath) template" -ForegroundColor Cyan -NoNewline
     $ProcessSetupDiagContent = Get-Content -Path $ProcessSetupDiagScriptPath -raw -ErrorAction SilentlyContinue
     If($ProcessSetupDiagContent) {
-        $NewProcessSetupDiagContent = $ProcessSetupDiagContent.Replace('[string]$LocalLogRoot',"[string]`$LocalLogRoot = `"$($FUTempPath)\Logs`"").Replace('[string]$TranscriptPath',"[string]`$TranscriptPath = `"$($LogPath)\FeatureUpdate-ProcessSetupDiag.log`"")
-        $NewProcessSetupDiagContent | Out-File "$($OutputPathRoot)\Scripts\Process-SetupDiag.ps1" -Encoding ascii
+        $NewProcessSetupDiagContent = $ProcessSetupDiagContent.Replace('[string]$LocalLogRoot',"[string]`$LocalLogRoot = `"$($FUTempPath)\Logs`"").Replace('[string]$TranscriptPath',"[string]`$TranscriptPath = `"$($LogPath)\$($LogPrefix)-$($ProcessSetupDiagScriptPath.BaseName).log`"")
+        $NewProcessSetupDiagContent | Out-File "$($OutputPathRoot)\Scripts\$($ProcessSetupDiagScriptPath.Name)" -Encoding ascii
     }
     Else {
         Throw "Could not find $($ProcessSetupDiagScriptPath). Exiting."
     }
+    Write-Host $Script:tick -ForegroundColor green
 
+    Write-Host " + Copying files to $($NewAppPath)" -ForegroundColor Cyan -NoNewline
     Copy-Item -Path "$($PSScriptRoot)\Content\*" -Destination $NewAppPath -Recurse -Exclude "ADD_SETUPDIAG_HERE.md" -Force
-    Copy-Item -Path "$($NewAppPath)" -Destination $ContentLocation -Force -Recurse
-
+    Write-Host $Script:tick -ForegroundColor green
+    
+    Write-Host " + Copying files to $($ContentLocation)" -ForegroundColor Cyan -NoNewline
+    Copy-Item -Path "$($NewAppPath)" -Destination $ContentLocation -Force -Recurse -ErrorAction Stop
+    Write-Host $Script:tick -ForegroundColor green
+    
     Write-Host "Content created!" -ForegroundColor Cyan -NoNewline
     Write-Host $Script:tick -ForegroundColor green
     #endregion
@@ -261,6 +272,23 @@ Try {
     Write-Host $Script:tick -ForegroundColor green
     #endregion
 
+
+    #region Baselines
+    #Need to be up here for the Application to have the baseline name for the DCM Eval
+    $InventoryBaseline = @{
+        Name = "Feature Update - Inventory OSVersionHistory and SetupDiag"
+        Description = "Inventories SetupDiag and OS Version History"
+    }
+    $NoLoggedOnUserBaseline = @{
+        Name = "Feature Update - No Logged On User Failure"
+        Description = "Check for failed Feature Update due to no logged on user error."
+    }
+    $FUFilesBaseline = @{
+        Name = "Feature Update - Scripts and Files Are Present"
+        Description = "Updates SetupConfig.ini and ensures that required Feature Update scripts are present on the device."
+    }
+    #endregion
+
     #region Application Config
     $Application = @{
         Name = $ApplicationName
@@ -269,11 +297,10 @@ Try {
         SoftwareVersion = "1.0"
         AutoInstall = $true
     }
-
     $ApplicationDeploymentType = @{
         ContentLocation = $ContentLocation
         DeploymentTypeName = "Copy Feature Update Files to Client"
-        InstallCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`""
+        InstallCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`" -Path `"$($FUTempPath)`" -TranscriptPath `"$($LogPath)\$($LogPrefix)-Copy-FeatureUpdateFiles.log`" -BaselineName `"$($FUFilesBaseline.Name)`""
         LogonRequirementType = [Microsoft.ConfigurationManagement.Cmdlets.AppMan.Commands.LogonRequirementType]::WhetherOrNotUserLoggedOn
         UninstallCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -RemoveOnly"
         UserInteractionMode = [Microsoft.ConfigurationManagement.ApplicationManagement.UserInteractionMode]::Hidden
@@ -285,7 +312,7 @@ Try {
     #Test for new ConfigMgr build that supports the RepairCommand
     $SupportsRepair = Get-Command -Name Add-CMScriptDeploymentType | Where-Object {$_.Parameters.Keys -eq "RepairCommand"}
     If($SupportsRepair) {
-        $ApplicationDeploymentType["RepairCommand"] = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`""
+        $ApplicationDeploymentType["RepairCommand"] = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`" -Path `"$($FUTempPath)`" -TranscriptPath `"$($LogPath)\$($LogPrefix)-Copy-FeatureUpdateFiles.log`" -BaselineName `"$($FUFilesBaseline.Name)`""
     }
 
     $GUIDFolderDetectionClause = @{
@@ -500,35 +527,19 @@ Try {
         ExistentialRule = $true
     }
     $FUFilesCIScriptsExistsSettings = @{
-        FileName = $ScriptsPath.Name
+        FileName = $ScriptsPath.BaseName
         IncludeSubfolders = $True
-        Path = $ScriptsPath.Directory
+        Path = $ScriptsPath.Parent
         Description = $null
-        Name = "$($ScriptsPath.Name) exists"
+        Name = "$($ScriptsPath.FullName) exists"
         NoncomplianceSeverity = [Microsoft.SystemsManagementServer.DesiredConfigurationManagement.Rules.NoncomplianceSeverity]::Critical
         RuleDescription = $null
-        RuleName = "$($ScriptsPath.Name) folder must exist"
+        RuleName = "$($ScriptsPath.FullName) folder must exist"
         Existence = "MustExist"
         ExistentialRule = $true
     }
 
-    #region Baselines
-    $InventoryBaseline = @{
-        Name = "Feature Update - Inventory OSVersionHistory and SetupDiag"
-        Description = "Inventories SetupDiag and OS Version History"
-    }
-    $NoLoggedOnUserBaseline = @{
-        Name = "Feature Update - No Logged On User Failure"
-        Description = "Check for failed Feature Update due to no logged on user error."
-    }
-    $FUFilesBaseline = @{
-        Name = "Feature Update - Scripts and Files Are Present"
-        Description = "Updates SetupConfig.ini and ensures that required Feature Update scripts are present on the device."
-    }
     #endregion
-
-    #endregion
-
     #endregion
 
     #region CI Creation
@@ -589,9 +600,9 @@ Try {
     Write-Host $Script:tick -ForegroundColor green
 
     Write-Host " + Creating $($FUFilesBaseline.Name) Baseline.. " -ForegroundColor Cyan -NoNewline
-    $FUFilesBaseline = New-CMBaseline @FUFilesBaseline
-    $FUFilesBaseline | Set-CMBaseline -AddOSConfigurationItem ($NewSetupDiagVersionCI.CI_ID,$NewSetupConfigINICI.CI_ID,$FUFilesCI.CI_ID)
-    $FUFilesBaseline | Move-CMObject -FolderPath $BaselineFolderPath
+    $NewFUFilesBaseline = New-CMBaseline @FUFilesBaseline
+    $NewFUFilesBaseline | Set-CMBaseline -AddOSConfigurationItem ($NewSetupDiagVersionCI.CI_ID,$NewSetupConfigINICI.CI_ID,$FUFilesCI.CI_ID)
+    $NewFUFilesBaseline | Move-CMObject -FolderPath $BaselineFolderPath
     Write-Host $Script:tick -ForegroundColor green
 
     Write-Host " + Creating $($NoLoggedOnUserBaseline.Name) Baseline.. " -ForegroundColor Cyan -NoNewline
@@ -605,6 +616,34 @@ Try {
     $NewInventoryBaseline | Set-CMBaseline -AddOSConfigurationItem ($NewSetupDiagInventoryCI.CI_ID,$NewSetupDiagResultsCI.CI_ID,$NewOSVersionHistoryInventoryCI.CI_ID)
     $NewInventoryBaseline | Move-CMObject -FolderPath $BaselineFolderPath
     Write-Host $Script:tick -ForegroundColor green
+
+
+    #region Export
+    [System.IO.DirectoryInfo]$ExportFolder = "$($PSScriptRoot)\Exports"
+    Write-Host " + Creating Export Folder $($ExportFolder).. " -ForegroundColor Cyan -NoNewline
+    If(!(Test-Path -Path $ExportFolder)) {
+        $ExportFolder = New-Item -Path $ExportFolder -Force -ItemType Directory
+    }
+    Write-Host $Script:tick -ForegroundColor green
+
+    Write-Host " + Exporting $($FUFilesBaseline.Name) Baseline.. " -ForegroundColor Cyan -NoNewline
+    $NewFUFilesBaseline | Export-CMBaseline -Path "$($ExportFolder)\$($NewFUFilesBaseline.LocalizedDisplayName)_$($NewFUFilesBaseline.CI_ID).cab" -Force -ErrorAction Continue
+    Write-Host $Script:tick -ForegroundColor green
+
+    Write-Host " + Exporting $($NoLoggedOnUserBaseline.Name) Baseline.. " -ForegroundColor Cyan -NoNewline
+    $NewNoLoggedOnUserBaseline | Export-CMBaseline -Path "$($ExportFolder)\$($NewNoLoggedOnUserBaseline.LocalizedDisplayName)_$($NewNoLoggedOnUserBaseline.CI_ID).cab" -Force -ErrorAction Continue
+    Write-Host $Script:tick -ForegroundColor green
+
+    Write-Host " + Exporting $($InventoryBaseline.Name) Baseline.. " -ForegroundColor Cyan -NoNewline
+    $NewInventoryBaseline | Export-CMBaseline -Path "$($ExportFolder)\$($NewInventoryBaseline.LocalizedDisplayName)_$($NewInventoryBaseline.CI_ID).cab" -Force -ErrorAction Continue
+    Write-Host $Script:tick -ForegroundColor green
+
+    Write-Host " + Exporting $($Application.Name) Baseline.. " -ForegroundColor Cyan -NoNewline
+    $NewApp = Get-CMApplication -Id $NewApplication.CI_ID
+    $NewApp | Export-CMApplication -Path "$($ExportFolder)\$($NewApp.LocalizedDisplayName)_$($NewApp.CI_ID).cab" -Force -ErrorAction Continue
+    Write-Host $Script:tick -ForegroundColor green
+
+    #endregion
 
     Write-Host "########################################################" -ForegroundColor Cyan
     Write-Host " --NOTICE--" -ForegroundColor Yellow
@@ -636,10 +675,11 @@ Try {
     Write-Host $Script:tick -ForegroundColor green
 }
 Catch {
+    Write-Host $script:X -ForegroundColor red
+    Write-Host "########################################################" -ForegroundColor Cyan
+    Write-Host "The following error occurred:" -ForegroundColor Red
+    Write-Host " + $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host " + Line: $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
+    Write-Host "########################################################" -ForegroundColor Cyan
     throw $_
 }
-    
-
-
-
-        
