@@ -47,6 +47,9 @@
         1.0 Initial Script
 #>
 
+
+#-SiteCode "PS1" -ProviderMachineName "CM01.ASD.NET" -ApplicationFolderName "FUApplication" -ContentLocation "\\CM01.ASD.NET\Media\$($ApplicationFolderName)" -NetworkLogPath "\\CM01.ASD.NET\FeatureUpdateLogs" 
+
 [cmdletbinding()]
 Param (
     [string]$SiteCode = "PS1",
@@ -92,7 +95,7 @@ Param (
     [string]$postuninstallScript = "Process-FeatureUpdateLogs.ps1",
     #Windows 10 2004 and later only
     [string]$successScript = "Process-FeatureUpdateLogs.ps1"
-    )
+)
 
 #region Functions
 Function ConnectTo-CMProvider {
@@ -529,7 +532,7 @@ Try {
     $FUFilesCIScriptsExistsSettings = @{
         FileName = $ScriptsPath.BaseName
         IncludeSubfolders = $True
-        Path = $ScriptsPath.Parent
+        Path = $ScriptsPath.Parent.FullName
         Description = $null
         Name = "$($ScriptsPath.FullName) exists"
         NoncomplianceSeverity = [Microsoft.SystemsManagementServer.DesiredConfigurationManagement.Rules.NoncomplianceSeverity]::Critical
