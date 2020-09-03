@@ -253,11 +253,11 @@ Try {
     Write-Host $Script:tick -ForegroundColor green
 
     Write-Host " + Copying files to $($NewAppPath)" -ForegroundColor Cyan -NoNewline
-    Copy-Item -Path "$($PSScriptRoot)\Content\*" -Destination $NewAppPath -Recurse -Exclude "ADD_SETUPDIAG_HERE.md" -Force
+    Get-ChildItem -Path "$($PSScriptRoot)\Content" | Copy-Item -Destination $NewAppPath -Recurse -Exclude "ADD_SETUPDIAG_HERE.md" -Force
     Write-Host $Script:tick -ForegroundColor green
     
     Write-Host " + Copying files to $($ContentLocation)" -ForegroundColor Cyan -NoNewline
-    Copy-Item -Path "$($NewAppPath)" -Destination $ContentLocation -Force -Recurse -ErrorAction Stop
+    Get-ChildItem -Path $NewAppPath | Copy-Item -Destination $ContentLocation -Force -Recurse -ErrorAction Stop
     Write-Host $Script:tick -ForegroundColor green
     
     Write-Host "Content created!" -ForegroundColor Cyan -NoNewline
@@ -367,9 +367,9 @@ Try {
     }
     $SetupConfigINICISettings = @{
         ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.RuleExpressionOperator]::IsEquals
-        DiscoveryScriptText = ((Get-Content -Path $SetupConfigINIScriptPath).Replace('[bool]$Remediate','[bool]$Remediate = $false').Replace('[string]$NetworkLogPath',"[string]`$LogPath = `"$($NetworkLogPath)`"").Replace('[string]$FUTempPath',"[string]`$FUTempPath = `"$($FUTempPath)`"") | Out-string)
+        DiscoveryScriptText = ((Get-Content -Path $SetupConfigINIScriptPath).Replace('[bool]$Remediate','[bool]$Remediate = $false').Replace('[string]$LogPath',"[string]`$LogPath = `"$($NetworkLogPath)`"").Replace('[string]$FuTempDir',"[string]`$FuTempDir = `"$($FUTempPath)`"") | Out-string)
         DiscoveryScriptLanguage = "PowerShell"
-        RemediationScriptText = ((Get-Content -Path $SetupConfigINIScriptPath).Replace('[bool]$Remediate','[bool]$Remediate = $true').Replace('[string]$NetworkLogPath',"[string]`$LogPath = `"$($NetworkLogPath)`"").Replace('[string]$FUTempPath',"[string]`$FUTempPath = `"$($FUTempPath)`"") | Out-string)
+        RemediationScriptText = ((Get-Content -Path $SetupConfigINIScriptPath).Replace('[bool]$Remediate','[bool]$Remediate = $true').Replace('[string]$LogPath',"[string]`$LogPath = `"$($NetworkLogPath)`"").Replace('[string]$FuTempDir',"[string]`$FuTempDir = `"$($FUTempPath)`"") | Out-string)
         RemediationScriptLanguage = "PowerShell"
         DataType = "String"
         Name = "SetupConfig"
