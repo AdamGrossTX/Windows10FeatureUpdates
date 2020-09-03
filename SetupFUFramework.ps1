@@ -518,8 +518,7 @@ Try {
         CreationType = "WindowsOS"
     }
     $FUFilesCIUpdateFilesExistsSettings = @{
-        FileName = $FUFilesGUID
-        IncludeSubfolders = $True
+        DirectoryName = $FUFilesGUID
         Path = "%Windir%\System32\update\run"
         Description = $null
         Name = "%Windir%\System32\update\run\$($FUFilesGUID) exists"
@@ -530,7 +529,7 @@ Try {
         ExistentialRule = $true
     }
     $FUFilesCIScriptsExistsSettings = @{
-        FileName = $ScriptsPath.BaseName
+        DirectoryName = $ScriptsPath.BaseName
         IncludeSubfolders = $True
         Path = $ScriptsPath.Parent.FullName
         Description = $null
@@ -597,8 +596,8 @@ Try {
 
     Write-Host " + Creating $($FUFilesCI.Name) Configuration Item.. " -ForegroundColor Cyan -NoNewline
     $FUFilesCI = New-CMConfigurationItem @FUFilesCI
-    $FUFilesCI = $FUFilesCI | Add-CMComplianceSettingFile @FUFilesCIUpdateFilesExistsSettings
-    $FUFilesCI = $FUFilesCI | Add-CMComplianceSettingFile @FUFilesCIScriptsExistsSettings
+    $FUFilesCI = $FUFilesCI | Add-CMComplianceSettingDirectory @FUFilesCIUpdateFilesExistsSettings
+    $FUFilesCI = $FUFilesCI | Add-CMComplianceSettingDirectory @FUFilesCIScriptsExistsSettings
     $FUFilesCI | Move-CMObject -FolderPath $CIFolderPath
     Write-Host $Script:tick -ForegroundColor green
 
