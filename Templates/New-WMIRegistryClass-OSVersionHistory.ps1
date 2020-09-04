@@ -147,7 +147,7 @@ Function Get-CustInventory {
       Return $True
    }
    Catch {
-      Return $_
+      Return $_.Exception.Message
    }
 }
 
@@ -335,7 +335,7 @@ Function Set-CustWMIClass {
             ElseIf($Obj.Type -eq [System.Management.CimType]::UInt16) {
                $ValueList[$Obj.Name] = ([uint16]$Values[$Obj.Name])
             }
-            ElseIf($Obj.Type -eq [System.Management.CimType]::UInt8) {
+            ElseIf($Obj.Type -eq [System.Management.CimType]::UInt32) {
                $ValueList[$Obj.Name] = ([uint32]$Values[$Obj.Name])
             }
             ElseIf($Obj.Type -eq [System.Management.CimType]::UInt64) {
@@ -371,6 +371,10 @@ Function Set-CustWMIClass {
             ElseIf($Obj.Type -eq [System.Management.CimType]::String) {
                $ValueList[$Obj.Name] = ($Values[$Obj.Name])
             }
+            Else {
+               $ValueList[$Obj.Name] = ([string]$Values[$Obj.Name])
+            }
+
          }
       }
       If($ValueList.Count -ge 1) {

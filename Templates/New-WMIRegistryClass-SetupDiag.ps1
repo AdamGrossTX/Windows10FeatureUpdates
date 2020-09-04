@@ -148,7 +148,7 @@ Function Get-CustInventory {
        Return $True
     }
     Catch {
-       Return $_
+       Return $_.Exception.Message
     }
  }
 
