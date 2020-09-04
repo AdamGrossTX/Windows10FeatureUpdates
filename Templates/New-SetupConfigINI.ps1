@@ -112,29 +112,45 @@ Param (
 #region Main
 $main = {
     Try {
+        #Note to your future self: You created $NewIniDictionary["Compliance"] so that you can process the INI file contents AND return the compliance state all in the same function. Leave this alone!!
+        $ComplianceValue = "NonCompliant"
+
+        #Get contents of the current INI File.
         If (Test-Path -Path $SourceIniFile -ErrorAction SilentlyContinue) {
             $CurrrentIniFileContent = Parse-IniFile -IniFile $SourceIniFile
         }
+
+        #If the current file has valid content and we aren't forcing a re-write, check the contents against the expected values.
         If (-not $AlwaysReWrite.IsPresent -and ($CurrrentIniFileContent -is [System.Collections.Specialized.OrderedDictionary])) {
+            #Returns a new dictionary with the ["Compliance"] set in it.
             $NewIniDictionary = Process-Content -OrigContent $CurrrentIniFileContent -NewContent $AddSettings -RemoveContent $RemoveSettings
-        }
-        Else {
-            #If the ini file doesn't exist or has no content, then just set $NewIniDictionary to the $Settings parameter
-            $NewIniDictionary = $AddSettings
-            $NewIniDictionary["Compliance"] = "NonCompliant"
-        }
-        If ($Remediate) {
-            #If no destination is specified, the source path is used
-            If (-not $DestIniFile) {
-                $DestIniFile = $SourceIniFile
-            }
+            
+            #Get the compliance value then remove it so it doesn't get exported to the INI file
             $ComplianceValue = $NewIniDictionary["Compliance"]
-            #Remove the compliance key so it doesn't get added to the final INI file.
             $NewIniDictionary.Remove("Compliance")
-            Export-IniFile -Content $NewIniDictionary -NewFile $DestIniFile | Out-Null
         }
-        Else {
-            $ComplianceValue = $NewIniDictionary["Compliance"]
+
+        If ($Remediate) {
+            If(-not $NewIniDictionary) {
+                $NewIniDictionary = $AddSettings
+            }
+
+            $ExportedFile = Export-IniFile -Content $NewIniDictionary -NewFile $DestIniFile
+            If($ExportedFile) {
+                #Check again for compliance with the new file
+                If (Test-Path -Path $DestIniFile -ErrorAction SilentlyContinue) {
+                    $RemediatedIniFileContent = Parse-IniFile -IniFile $DestIniFile
+                    $RemediatedIniDictionary = Process-Content -OrigContent $RemediatedIniFileContent -NewContent $AddSettings -RemoveContent $RemoveSettings
+                    $ComplianceValue = $RemediatedIniDictionary["Compliance"]
+                }
+                Else {
+                    $ComplianceValue = "NonCompliant"
+                }
+            }
+            Else {
+                #No File was created
+                $ComplianceValue = "NonCompliant"
+            }
         }
         Return $ComplianceValue
     }
@@ -310,42 +326,41 @@ Function Export-IniFile {
 
     Try {
         #This array will be the final ini output
-        $NewIniContent = @()
+        $NewIniContent = New-Object System.Collections.Generic.List[System.String]
 
         $KeyCount = 0
         #Convert the dictionary into ini file format
         ForEach ($sectionHash in $Content.Keys) {
             $KeyCount++
             #Create section headers
-            $NewIniContent += "[{0}]" -f $sectionHash
+            $NewIniContent.Add("[$($sectionHash)]")
 
             #Create all section content. Items with a Name and Value in the dictionary will be formatted as Name=Value.
             #Any items with no value will be formatted as Name only.
             ForEach ($key in $Content[$sectionHash].keys) {
-                $NewIniContent +=
                 If ($Key -like "Comment*") {
                     #Comment
-                    $Content[$sectionHash][$key]
+                    $NewIniContent.Add($Content[$sectionHash][$key])
                 }
                 ElseIf ($NewIniDictionary[$sectionHash][$key]) {
                     #Name=Value format
-                    ($key, $Content[$sectionHash][$key]) -join "="
+                    $NewIniContent.Add(($key, $Content[$sectionHash][$key]) -join "=")
                 }
                 Else {
                     #Name only format
-                    $key
+                    $NewIniContent.Add($key)
                 }
             }
             #Add a blank line after each section if there is more than one, but don't add one after the last section
             If ($KeyCount -lt $Content.Keys.Count) {
-                $NewIniContent += ""
+                $NewIniContent.Add("")
             }
         }
         #Write $Content to the SetupConfig.ini file
-
         New-Item -Path $NewFile -ItemType File -Force | Out-Null
         $NewIniContent -join "`r`n" | Out-File -FilePath $NewFile -Force -NoNewline | Out-Null
-        Return $NewIniContent
+        $ExportedFile = Get-Item -Path $NewFile -ErrorAction SilentlyContinue
+        Return $ExportedFile
     }
     Catch {
         $PSCmdlet.ThrowTerminatingError($_)
