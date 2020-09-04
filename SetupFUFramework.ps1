@@ -5,16 +5,16 @@
     See SYNOPSIS
 .PARAMETER SiteCode
     ConfigMgr Site Code
-.PARAMETER ProviderMachineName
+.PARAMETER SiteServer
     ConfigMgr SMS Provider Server.
 .PARAMETER LogPath
-    A UNC network share that Everyone has write permissions to to copy logs to.    
+    A UNC network share that Everyone has write permissions to to copy logs to.
 .PARAMETER FUFilesGUID
     The custom GUID that will be used for "%Windir%\System32\update\run". This GUID needs to match what is used in FU Files App.
 .PARAMETER FUTempPath
-    The local path to store the scripts for the Feature Update to use. 
+    The local path to store the scripts for the Feature Update to use.
     Default is "C:\~FeatureUpdateTemp"
-.PARAMETER SetupDiagVersion 
+.PARAMETER SetupDiagVersion
     This should match the version of SetupDiag that you download from MS. ,
     https://docs.microsoft.com/en-us/windows/deployment/upgrade/setupdiag,
     SetupDiag.exe should be placed in the .\Scripts folder before running this script.,
@@ -22,19 +22,19 @@
 .PARAMETER ScriptsPath
     Local path on client where scripts will be stored
     Default is Path = "C:\~FeatureUpdateTemp\Scripts"
-.PARAMETER SetupConfigINIScriptPath 
+.PARAMETER SetupConfigINIScriptPath
     Path to SetupConfigINI Script. Default is "$($PSScriptRoot)\ComplianceScripts\New-SetupConfigINI.ps1",
-.PARAMETER OSVersionInvScriptPath 
+.PARAMETER OSVersionInvScriptPath
     Path to OSVersionInv Script. Default is "$($PSScriptRoot)\ComplianceScripts\New-WMIRegistryClass-OSVersionHistory.ps1",
-.PARAMETER SetupDiagInvScriptPath 
+.PARAMETER SetupDiagInvScriptPath
     Path to SetupDiagInv Script. Default is "$($PSScriptRoot)\ComplianceScripts\New-WMIRegistryClass-SetupDiag.ps1",
-.PARAMETER SetupDiagDiscoveryScriptPath 
+.PARAMETER SetupDiagDiscoveryScriptPath
     Path to SetupDiagDiscovery Script. Default is "$($PSScriptRoot)\ComplianceScripts\SetupDiagCI_Dicovery.ps1",
-.PARAMETER SetupDiagRemediationScriptPath 
+.PARAMETER SetupDiagRemediationScriptPath
     Path to SetupDiagRemediation Script. Default is "$($PSScriptRoot)\ComplianceScripts\SetupDiagCI_Remediation.ps1",
-.PARAMETER NoLoggedOnUserDiscoveryScriptPath 
+.PARAMETER NoLoggedOnUserDiscoveryScriptPath
     Path to NoLoggedOnUserDiscovery Script. Default is "$($PSScriptRoot)\ComplianceScripts\NoLoggedOnUserCI_Discovery.ps1",
-.PARAMETER NoLoggedOnUserRemediationScriptPath 
+.PARAMETER NoLoggedOnUserRemediationScriptPath
     Path to NoLoggedOnUserRemediation Script. Default is "$($PSScriptRoot)\ComplianceScripts\NoLoggedOnUserCI_Remediation.ps1"
 
 .NOTES
@@ -45,19 +45,19 @@
     Creation Date:    08/28/2020
     Release Notes:
         1.0 Initial Script
+
+.EXAMPLE
+    .\SetupFUFramework -SiteCode "PS1" -SiteServer "CM01.ASD.NET" -ApplicationFolderName "FUApplication" -ApplicationSourceRoot "\\CM01.ASD.NET\Media\$($ApplicationFolderName)" -NetworkLogPath "\\CM01.ASD.NET\FeatureUpdateLogs"
 #>
-
-
-#-SiteCode "PS1" -ProviderMachineName "CM01.ASD.NET" -ApplicationFolderName "FUApplication" -ContentLocation "\\CM01.ASD.NET\Media\$($ApplicationFolderName)" -NetworkLogPath "\\CM01.ASD.NET\FeatureUpdateLogs" 
 
 [cmdletbinding()]
 Param (
     [string]$SiteCode = "PS1",
-    [string]$ProviderMachineName = "CM01.ASD.NET",    
+    [string]$SiteServer = "CM01.ASD.NET",
     [string]$ApplicationFolderName = "FUApplication",
     [string]$ApplicationSourceRoot = "\\CM01.ASD.NET\Media",
     [string]$NetworkLogPath = "\\CM01.ASD.NET\FeatureUpdateLogs",
-    
+
     #Unless you change the default script names or paths, you don't need to edit these.
     [string]$FUFilesGUID = (New-Guid).Guid.ToString(),
     [string]$PublisherName = "A Square Dozen",
@@ -102,7 +102,7 @@ Param (
 Function ConnectTo-CMProvider {
     Param(
         [string]$SiteCode,
-        [string]$ProviderMachineName
+        [string]$SiteServer
     )
     Try {
         if((Get-Module ConfigurationManager) -eq $null) {
@@ -111,7 +111,7 @@ Function ConnectTo-CMProvider {
 
         # Connect to the site's drive if it is not already present
         if((Get-PSDrive -Name $SiteCode -PSProvider CMSite -ErrorAction SilentlyContinue) -eq $null) {
-            New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $ProviderMachineName
+            New-PSDrive -Name $SiteCode -PSProvider CMSite -Root $SiteServer
         }
 
         # Set the current location to be the site code.
@@ -172,7 +172,7 @@ Try {
     Else {
         Throw "SetupDiag is missing from $SetupDiagPath. Please download the latest setupdiag and copy to $SetupDiagPath."
     }
-    
+
     ###############################################
     #Do Not Edit Below Here
     ###############################################
@@ -225,7 +225,7 @@ Try {
 
     #region CMD Creation
     Write-Host "Creating Application Content in $($OutputPathRoot)" -ForegroundColor Cyan
-    
+
     $NewAppPath = New-Item -Path $OutputPathRoot -ItemType Directory -Force
     $ApplicationSourcePath = New-Item -Path (Join-Path -Path $ApplicationSourceRoot -ChildPath $ApplicationFolderName) -ItemType Directory -Force
     New-FUCmdFile @FailureConfig
@@ -260,11 +260,11 @@ Try {
     Write-Host " + Copying files to $($NewAppPath)" -ForegroundColor Cyan -NoNewline
     Get-ChildItem -Path "$($PSScriptRoot)\Content" | Copy-Item -Destination $NewAppPath -Recurse -Exclude "ADD_SETUPDIAG_HERE.md" -Force
     Write-Host $Script:tick -ForegroundColor green
-    
+
     Write-Host " + Copying files to $($ApplicationSourcePath)" -ForegroundColor Cyan -NoNewline
     Get-ChildItem -Path $NewAppPath | Copy-Item -Destination $ApplicationSourcePath -Force -Recurse -ErrorAction Stop
     Write-Host $Script:tick -ForegroundColor green
-    
+
     Write-Host "Content created!" -ForegroundColor Cyan -NoNewline
     Write-Host $Script:tick -ForegroundColor green
     #endregion
@@ -273,7 +273,7 @@ Try {
     Write-Host "Creating Feature Update Configuration Items and Baselines" -ForegroundColor Cyan
     Write-Host "########################################################" -ForegroundColor Cyan
     Write-Host " + Connecting to CMProvider.. " -ForegroundColor Cyan -NoNewline
-    ConnectTo-CMProvider -SiteCode $SiteCode -ProviderMachineName $ProviderMachineName
+    ConnectTo-CMProvider -SiteCode $SiteCode -SiteServer $SiteServer
     Write-Host $Script:tick -ForegroundColor green
     #endregion
 
@@ -360,7 +360,7 @@ Try {
     $AppDeploymentType = $NewApplication | Add-CMScriptDeploymentType @ApplicationDeploymentType -AddDetectionClause ($cla1,$cla2,$cla3) -DetectionClauseConnector @{LogicalName=$logic2;Connector="and"},@{LogicalName=$logic3;Connector="and"}
     Write-Host $Script:tick -ForegroundColor green
     #endregion
-    
+
     #region CI Config
 
     #region SetupConfigINI CI
