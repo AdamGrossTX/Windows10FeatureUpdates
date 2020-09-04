@@ -14,12 +14,12 @@ Note: Once the application has been created within ConfigMgr, the script will ex
 
 ## Usage
 ```Powershell
-.\SetupFUFramework.ps1 -SiteCode "PS1" -ProviderMachineName "CM01.ASD.NET" -ApplicationFolderName "FUApplication" -ContentLocation "\\CM01.ASD.NET\Media\$($ApplicationFolderName)" -NetworkLogPath "\\CM01.ASD.NET\FeatureUpdateLogs"
+    .\SetupFUFramework -SiteCode "PS1" -SiteServer "CM01.ASD.NET" -ApplicationFolderName "FUApplication" -ApplicationSourceRoot "\\CM01.ASD.NET\Media\$($ApplicationFolderName)" -NetworkLogPath "\\CM01.ASD.NET\FeatureUpdateLogs"
 ```
 
 ## Ouput
 ### SetupFUFramework.ps1 Script Output
-* .\FUApplication
+* .\\\<ApplicationFolderName>
   * Scripts
     * Process-Content.ps1
     * Process-FeatureUpdateLogs.ps1
@@ -33,6 +33,10 @@ Note: Once the application has been created within ConfigMgr, the script will ex
     * precommit.cmd
     * preinstall.cmd
     * success.cmd
+* .\Exports
+  * Feature Update - Inventory OSVersionHistory and SetupDiag_<CI_ID>.cab
+  * Feature Update - No Logged On User Failure_<CI_ID>.cab
+  * Exports\Feature Update - Scripts and Files Are Present_<CI_ID>.cab
 
 ### In ConfigMgr
 * \Software Library\Overview\Application Management\Applications
@@ -51,7 +55,7 @@ Note: Once the application has been created within ConfigMgr, the script will ex
   * Feature Update - SetupDiag Version
 
 ### Application Installation
-On the client, files are stored in `c:\~FeatureUpdateTemp`. 
+On the client, files are stored in `c:\~FeatureUpdateTemp`.
 Logs are written to `c:\~FeatureUpdateTemp\Logs` and `c:\Windows\CCM\Logs`
 * C:\~FeatureUpdateTemp
   * Scripts
@@ -98,7 +102,7 @@ Use the Power Bi template in the Reporting folder to report on the custom invent
 
 ## Demos
 
-[Running SetupFUFramework](https://youtu.be/8g3M_ekYvQg)  
-[Distributing and Deploying Application](https://youtu.be/9O2SJ4MOmDU)  
-[Importing MOFs](https://youtu.be/NlkJBNI8AHw)  
-[Updating and Deploying CIs and Baselines](https://youtu.be/sq74eyeNX1E)  
+[Running SetupFUFramework](https://youtu.be/8g3M_ekYvQg)
+[Distributing and Deploying Application](https://youtu.be/9O2SJ4MOmDU)
+[Importing MOFs](https://youtu.be/NlkJBNI8AHw)
+[Updating and Deploying CIs and Baselines](https://youtu.be/sq74eyeNX1E)
