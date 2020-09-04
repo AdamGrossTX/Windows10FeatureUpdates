@@ -668,8 +668,8 @@ Try {
     Write-Host " -- Distribute Content for the application $($ApplicationName)." -ForegroundColor Cyan
     Write-Host " -- Deploy the application $($ApplicationName) to all Windows 10 devices." -ForegroundColor Cyan
     Write-Host " -- Deploy the Configuration Baseline $($FUFilesBaseline.Name) to all Windows 10 devices." -ForegroundColor Cyan
-    Write-Host " -- Deploy the Configuration Baseline $($NewNoLoggedOnUserBaseline.Name) to all Windows 10 devices." -ForegroundColor Cyan
-    Write-Host " -- Deploy the Configuration Baseline $($NewInventoryBaseline.Name) to all Windows 10 devices." -ForegroundColor Cyan
+    Write-Host " -- Deploy the Configuration Baseline $($NoLoggedOnUserBaseline.Name) to all Windows 10 devices." -ForegroundColor Cyan
+    Write-Host " -- Deploy the Configuration Baseline $($InventoryBaseline.Name) to all Windows 10 devices." -ForegroundColor Cyan
     Write-Host " -- Create new Compliant collection for $($FUFilesBaseline.Name) Baseline Deployment." -ForegroundColor Cyan
     Write-Host " -- Create new Feature Update deployment collection using the $($FUFilesBaseline.Name) Baseline Deployment Compliant collection as the limiting collection." -ForegroundColor Cyan
     Write-Host " -- Use this new collection as your limiting collection for all Feature Update deployments." -ForegroundColor Cyan
