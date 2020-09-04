@@ -55,7 +55,7 @@ Param (
     [string]$SiteCode = "PS1",
     [string]$ProviderMachineName = "CM01.ASD.NET",    
     [string]$ApplicationFolderName = "FUApplication",
-    [string]$ContentLocation = "\\CM01.ASD.NET\Media\$($ApplicationFolderName)",
+    [string]$ApplicationSourceRoot = "\\CM01.ASD.NET\Media",
     [string]$NetworkLogPath = "\\CM01.ASD.NET\FeatureUpdateLogs",
     
     #Unless you change the default script names or paths, you don't need to edit these.
@@ -98,6 +98,7 @@ Param (
 )
 
 #region Functions
+
 Function ConnectTo-CMProvider {
     Param(
         [string]$SiteCode,
@@ -226,6 +227,7 @@ Try {
     Write-Host "Creating Application Content in $($OutputPathRoot)" -ForegroundColor Cyan
     
     $NewAppPath = New-Item -Path $OutputPathRoot -ItemType Directory -Force
+    $ApplicationSourcePath = New-Item -Path (Join-Path -Path $ApplicationSourceRoot -ChildPath $ApplicationFolderName) -ItemType Directory -Force
     New-FUCmdFile @FailureConfig
     New-FUCmdFile @SetupCompleteConfig
     New-FUCmdFile @PreCommitConfig
@@ -259,8 +261,8 @@ Try {
     Get-ChildItem -Path "$($PSScriptRoot)\Content" | Copy-Item -Destination $NewAppPath -Recurse -Exclude "ADD_SETUPDIAG_HERE.md" -Force
     Write-Host $Script:tick -ForegroundColor green
     
-    Write-Host " + Copying files to $($ContentLocation)" -ForegroundColor Cyan -NoNewline
-    Get-ChildItem -Path $NewAppPath | Copy-Item -Destination $ContentLocation -Force -Recurse -ErrorAction Stop
+    Write-Host " + Copying files to $($ApplicationSourcePath)" -ForegroundColor Cyan -NoNewline
+    Get-ChildItem -Path $NewAppPath | Copy-Item -Destination $ApplicationSourcePath -Force -Recurse -ErrorAction Stop
     Write-Host $Script:tick -ForegroundColor green
     
     Write-Host "Content created!" -ForegroundColor Cyan -NoNewline
@@ -301,7 +303,7 @@ Try {
         AutoInstall = $true
     }
     $ApplicationDeploymentType = @{
-        ContentLocation = $ContentLocation
+        ContentLocation = $ApplicationSourcePath
         DeploymentTypeName = "Copy Feature Update Files to Client"
         InstallCommand = "Powershell.exe -ExecutionPolicy ByPass -File Copy-FeatureUpdateFiles.ps1 -GUID `"$($FUFilesGUID)`" -Path `"$($FUTempPath)`" -TranscriptPath `"$($LogPath)\$($LogPrefix)-Copy-FeatureUpdateFiles.log`" -BaselineName `"$($FUFilesBaseline.Name)`""
         LogonRequirementType = [Microsoft.ConfigurationManagement.Cmdlets.AppMan.Commands.LogonRequirementType]::WhetherOrNotUserLoggedOn
