@@ -102,7 +102,7 @@ Use the Power Bi template in the Reporting folder to report on the custom invent
 
 ## Demos
 
-[Running SetupFUFramework](https://youtu.be/8g3M_ekYvQg)
-[Distributing and Deploying Application](https://youtu.be/9O2SJ4MOmDU)
-[Importing MOFs](https://youtu.be/NlkJBNI8AHw)
-[Updating and Deploying CIs and Baselines](https://youtu.be/sq74eyeNX1E)
+[Running SetupFUFramework](https://youtu.be/8g3M_ekYvQg)  
+[Distributing and Deploying Application](https://youtu.be/9O2SJ4MOmDU)  
+[Importing MOFs](https://youtu.be/NlkJBNI8AHw)  
+[Updating and Deploying CIs and Baselines](https://youtu.be/sq74eyeNX1E)  
