@@ -98,11 +98,13 @@ After running SetupFUFramework you must do the following:
 ## Reporting
 Use the Power Bi template in the Reporting folder to report on the custom inventory that is generated after installing the MOFs and deploying the CIs/Baselines.
 
-![OS History](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20SScreenshot-OSHistory.jpg)
-![Cumulative OS History](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20SScreenshot-CumulativeOSHistory.jpg)
-![Build Type By Day](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20SScreenshot-BuildTypeByDay.jpg)
-![SetupDiag Failures](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20SScreenshot-SetupDiagFailures.jpg)
+![OS History](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20Screenshot-OSHistory.jpg)
+![Cumulative OS History](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20Screenshot-CumulativeOSHistory.jpg)
+![Build Type By Day](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20Screenshot-BuildTypeByDay.jpg)
+![SetupDiag Failures](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20Screenshot-SetupDiagFailures.jpg)
 ![Computer Details](https://raw.githubusercontent.com/AdamGrossTX/Windows10FeatureUpdates/master/Images/PowerBI%20Screenshot-ComputerDetails.jpg)
+
+
 
 
 ## Demos
