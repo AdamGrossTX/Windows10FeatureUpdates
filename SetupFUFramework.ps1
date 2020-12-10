@@ -335,8 +335,8 @@ Try {
     $SetupDiagDetectionClause = @{
         FileName = "SetupDiag.exe"
         Path = (Join-Path -Path $FUTempPath -ChildPath "Scripts").ToString()
-        PropertyType = [Microsoft.ConfigurationManagement.DesiredConfigurationManagement.FileFolderProperty]::Version
-        ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.RuleExpressionOperator]::GreaterEquals
+        PropertyType = "Version"
+        ExpressionOperator = "GreaterEquals"
         ExpectedValue = $SetupDiagVersion
         Value = $true
         Is64Bit = $true
