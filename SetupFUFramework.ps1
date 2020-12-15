@@ -346,11 +346,20 @@ Try {
     #region Application Creation
     $ExistingApp = Get-CMApplication -Name $Application.Name -ErrorAction SilentlyContinue
     If($ExistingApp) {
-        Throw "The application $($Application.Name) already exists. Exiting."
+        #Throw "The application $($Application.Name) already exists. Exiting."
+        Write-Host " + Existing application $($Application.Name.ToString()) found. Updating application." -ForegroundColor Cyan
+        Write-Host " + Removing Existing Deployment Types." -ForegroundColor Cyan -NoNewline
+        $ExistingApp | Get-CMDeploymentType | Remove-CMScriptDeploymentType -Force
+        Write-Host $Script:tick -ForegroundColor green
+        Write-Host " + Updating exiting application details." -ForegroundColor Cyan -NoNewline
+        $ExistingApp | Set-CMApplication -NewName $Application.Name -Description $Application.Description -Publisher $Application.Publisher -SoftwareVersion $Application.SoftwareVersion -AutoInstall $Application.AutoInstall
+        Write-Host $Script:tick -ForegroundColor green
+        $NewApplication = $ExistingApp
     }
-
-    Write-Host " + Creating new Application $($Application.Name.ToString())." -ForegroundColor Cyan -NoNewline
-    $NewApplication = New-CMApplication @Application
+    Else {
+        Write-Host " + Creating new Application $($Application.Name.ToString())." -ForegroundColor Cyan -NoNewline
+        $NewApplication = New-CMApplication @Application
+    }
     $cla1 = New-CMDetectionClauseDirectory @GUIDFolderDetectionClause
     $cla2 = New-CMDetectionClauseDirectory @ScriptsFolderDetectionClause
     $cla3 = New-CMDetectionClauseFile @SetupDiagDetectionClause

@@ -1,5 +1,8 @@
 Feature Update Script Process Overview.docx
 SetupDiag.exe
 .vscode/settings.json
-Misc - Exclude/
-Misc - Exclude/*
+/Misc - Exclude/
+/Misc - Exclude/*
+/Exports
+/Scripts
+/Update
