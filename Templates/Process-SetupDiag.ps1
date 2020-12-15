@@ -184,6 +184,10 @@ Function Process-SetupDiag {
 
             If(!($SkipWriteRegKey.IsPresent)) {
                 If(Get-Item -Path $SetupDiagKeyPath -ErrorAction SilentlyContinue) {
+                    If(Get-ItemProperty -Name 'DateTime') {
+                        $NewDateTime = (Get-Date).GetDateTimeFormats()[72]
+                        $NewKey | New-ItemProperty -Name 'DateTime' -Value $NewDateTime -PropertyType string -Force | Out-Null
+                    }
                     New-ItemProperty -Path $SetupDiagKeyPath -Name $CustomRegKeyName -Value $Status -PropertyType string -Force | Out-Null
                 }
                 Else {

@@ -89,6 +89,20 @@ ForEach($Key in $Sources.keys) {
     ProcessContent @ArgList -ErrorAction Continue
 }
 
+#####
+#Update permissions on the new folder to prevent users from replacing script content.
+$User = "NT AUTHORITY\Authenticated Users"
+$ACL = Get-Acl -Path $Path
+$ACL.SetAccessRuleProtection($True, $True) # Remove inheritance 
+$ACL.Access | Where-Object {$_.IdentityReference -eq $User} | ForEach-Object {$ACL.RemoveAccessRule($_)}
+Set-ACL -Path $Path -AclObject $ACL | Out-Null # Apply ACL on folder
+$ACL = Get-Acl -Path $Path
+#Add ReadAndExecute back for Authenticated Users
+$AccessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($User,"ReadAndExecute, Synchronize", "ContainerInherit,ObjectInherit", "None", "Allow")
+$ACL.SetAccessRule($AccessRule)
+Set-ACL -Path $Path -AclObject $ACL | Out-Null # Apply ACL on folder
+#####
+
 If($BaselineName) {
     Trigger-DCMEvaluation -BaseLine $BaselineName -ErrorAction SilentlyContinue
 }
