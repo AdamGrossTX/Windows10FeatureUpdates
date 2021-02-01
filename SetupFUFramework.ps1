@@ -336,7 +336,7 @@ Try {
         FileName = "SetupDiag.exe"
         Path = (Join-Path -Path $FUTempPath -ChildPath "Scripts").ToString()
         PropertyType = [Microsoft.ConfigurationManagement.DesiredConfigurationManagement.FileFolderProperty]::Version
-        ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.RuleExpressionOperator]::GreaterEquals
+        ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.FileFolderRuleExpressionOperator]::GreaterEquals
         ExpectedValue = $SetupDiagVersion
         Value = $true
         Is64Bit = $true
@@ -486,7 +486,7 @@ Try {
         RuleDescription = $null
     }
     $SetupDiagVersionCIRule_Version = @{
-        PropertyType = "Version"
+        #PropertyType = "Version"
         ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.RuleExpressionOperator]::IsEquals
         ReportNoncompliance = $True
         RuleName = "SetupDiag.exe Version = $($SetupDiagVersion)"
@@ -586,10 +586,8 @@ Try {
     $NewSetupDiagVersionCISettings = $NewSetupDiagVersionCI | Get-CMComplianceSetting -SettingName $SetupDiagVersionCISettings.Name
     $NewSetupDiagVersionCIRule_Exists = $NewSetupDiagVersionCISettings | New-CMComplianceRuleExistential @SetupDiagVersionCIRule_Exists
     $NewSetupDiagVersionCI = $NewSetupDiagVersionCI | Add-CMComplianceSettingRule -Rule $NewSetupDiagVersionCIRule_Exists
-    #This Cmdlet is incomplete and doesn't support all of the PropertyTypes required to make this work.
-    #$NewSetupDiagVerCISettingRule_version = $NewSetupDiagVersionCISettings | New-CMComplianceRuleFileFolderSimple @SetupDiagVersionCIRule_Version
-
-    #$NewSetupDiagVersionCI = $NewSetupDiagVersionCI | Add-CMComplianceSettingRule -Rule $SetupDiagVerCISettingRule_version
+    $NewSetupDiagVerCISettingRule_version = $NewSetupDiagVersionCISettings | New-CMComplianceRuleVersion @SetupDiagVersionCIRule_Version
+    $NewSetupDiagVersionCI = $NewSetupDiagVersionCI | Add-CMComplianceSettingRule -Rule $NewSetupDiagVerCISettingRule_version
     $NewSetupDiagVersionCI | Move-CMObject -FolderPath $CIFolderPath
     Write-Host $Script:tick -ForegroundColor green
 
@@ -660,16 +658,6 @@ Try {
 
     Write-Host "########################################################" -ForegroundColor Cyan
     Write-Host " --NOTICE--" -ForegroundColor Yellow
-    Write-Host " -- To complete this setup, add a Version detection Rule for SetupDiag.exe to the $($SetupDiagVersionCI.Name) CI." -ForegroundColor Yellow
-    Write-Host "-------------------------------------------------------------" -ForegroundColor Cyan
-    Write-Host "-- Rule Name:      SetupDiag.exe Version = $($SetupDiagVersion)" -ForegroundColor Cyan
-    Write-Host "-- Rule Type:      Value" -ForegroundColor Cyan
-    Write-Host "-- Property:       File Version" -ForegroundColor Cyan
-    Write-Host "-- Type            Equals" -ForegroundColor Cyan
-    Write-Host "-- Value:          $($SetupDiagVersion)" -ForegroundColor Cyan
-    Write-Host "-- NonCompliance : Critical" -ForegroundColor Cyan
-    Write-Host "-------------------------------------------------------------" -ForegroundColor Cyan
-    #endregion
     Write-Host "-- Additional Actions Required --" -ForegroundColor Yellow
     Write-Host "-------------------------------------------------------------" -ForegroundColor Cyan
     Write-Host " -- Import OSVersionHistory.MOF into Default Client Settings Hardware Inventory." -ForegroundColor Cyan
