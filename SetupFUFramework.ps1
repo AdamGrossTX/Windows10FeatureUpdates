@@ -336,7 +336,16 @@ Try {
         FileName = "SetupDiag.exe"
         Path = (Join-Path -Path $FUTempPath -ChildPath "Scripts").ToString()
         PropertyType = [Microsoft.ConfigurationManagement.DesiredConfigurationManagement.FileFolderProperty]::Version
-        ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.FileFolderRuleExpressionOperator]::GreaterEquals
+        #ExpressionOperator = [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.FileFolderRuleExpressionOperator]::GreaterEquals
+        ExpressionOperator = #This code is to handle changes in ConfigMgr 2010's ExperessionOperator ENUM options.
+            If('Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.FileFolderRuleExpressionOperator' -as [Type]) 
+                { 
+                    [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.FileFolderRuleExpressionOperator]::GreaterEquals 
+                } 
+            ElseIf('Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.RuleExpressionOperator' -as [Type]) 
+                {
+                    [Microsoft.ConfigurationManagement.Cmdlets.Dcm.Commands.RuleExpressionOperator]::GreaterEquals
+                };
         ExpectedValue = $SetupDiagVersion
         Value = $true
         Is64Bit = $true
