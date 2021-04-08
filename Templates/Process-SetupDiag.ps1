@@ -183,15 +183,14 @@ Function Process-SetupDiag {
             }
 
             If(!($SkipWriteRegKey.IsPresent)) {
+                $NewDateTime = (Get-Date).GetDateTimeFormats()[72]
                 If(Get-Item -Path $SetupDiagKeyPath -ErrorAction SilentlyContinue) {
-                    If(Get-ItemProperty -Name 'DateTime') {
-                        $NewDateTime = (Get-Date).GetDateTimeFormats()[72]
-                        $NewKey | New-ItemProperty -Name 'DateTime' -Value $NewDateTime -PropertyType string -Force | Out-Null
+                    If(Get-ItemProperty -Path $SetupDiagKeyPath -Name 'DateTime') {
+                        New-ItemProperty -Path $SetupDiagKeyPath -Name 'DateTime' -Value $NewDateTime -PropertyType string -Force | Out-Null
                     }
                     New-ItemProperty -Path $SetupDiagKeyPath -Name $CustomRegKeyName -Value $Status -PropertyType string -Force | Out-Null
                 }
                 Else {
-                    $NewDateTime = (Get-Date).GetDateTimeFormats()[72]
                     $NewKey = New-Item -Path $SetupDiagKeyPath -Force
                     $NewKey | New-ItemProperty -Name $CustomRegKeyName -Value $Status -PropertyType string -Force | Out-Null
                     $NewKey | New-ItemProperty -Name "ProfileName" -Value 'BareMetal' -PropertyType string -Force | Out-Null
