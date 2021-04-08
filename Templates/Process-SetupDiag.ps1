@@ -40,7 +40,7 @@ Function Process-SetupDiag {
         $Status = $CallingScript
 
         #cleanup any existing logs
-        Get-ChildItem -Path $TranscriptPath,$LocalLogRoot | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
+        Get-ChildItem -Path $TranscriptPath,$LocalLogRoot -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue | Out-Null
 
         Start-Transcript -Path $TranscriptPath -Force -Append -NoClobber -ErrorAction Continue | Out-Null
 
