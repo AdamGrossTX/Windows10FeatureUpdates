@@ -1,4 +1,4 @@
-# Windows 10 Feature Updates Scripts
+# Windows 10 Feature Updates Scripts Framework
 
 #### UPDATE: 08/30/2020
 I have re-worked this repo to enable you to generate all of the files/scripts then create CIs, Baselines and an Application. Follow the instructions at the end of the script to complete the setup - there are still some manual steps required.
