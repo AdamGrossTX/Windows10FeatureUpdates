@@ -121,7 +121,7 @@ $main = {
         }
 
         #If the current file has valid content and we aren't forcing a re-write, check the contents against the expected values.
-        If (-not $AlwaysReWrite.IsPresent -and ($CurrrentIniFileContent -is [System.Collections.Specialized.OrderedDictionary])) {
+        If (-not $AlwaysReWrite.IsPresent -and ($CurrrentIniFileContent -is [System.Collections.Specialized.OrderedDictionary]) -and $CurrrentIniFileContent.Count -gt 0) {
             #Returns a new dictionary with the ["Compliance"] set in it.
             $NewIniDictionary = Process-Content -OrigContent $CurrrentIniFileContent -NewContent $AddSettings -RemoveContent $RemoveSettings
             
