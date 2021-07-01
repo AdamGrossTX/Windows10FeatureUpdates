@@ -50,6 +50,8 @@ class CM_OSVersionHistory : SMS_Class_Template
     [ SMS_Report (TRUE) ]
     String     CurrentVersion;
     [ SMS_Report (TRUE) ]
+    String     DisplayVersion;
+    [ SMS_Report (TRUE) ]
     String     EditionID;
     [ SMS_Report (TRUE) ]
     String     EditionSubManufacturer;
