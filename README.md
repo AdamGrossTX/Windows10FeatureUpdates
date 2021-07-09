@@ -87,12 +87,12 @@ After running SetupFUFramework you must do the following:
 - [ ] Import OSVersionHistory.MOF into Default Client Settings Hardware Inventory.
 - [ ] Import SetupDiag.MOF into Default Client Settings Hardware Inventory.
 - [ ] Distribute Content for the application Feature Update - Client Content.
-- [ ] Deploy the application Feature Update - Client Content to all Windows 10 devices.
-- [ ] Deploy the Configuration Baseline  to all Windows 10 devices.
-- [ ] Deploy the Configuration Baseline  to all Windows 10 devices.
-- [ ] Deploy the Configuration Baseline  to all Windows 10 devices.
-- [ ] Create new Compliant collection for  Baseline Deployment.
-- [ ] Create new Feature Update deployment collection using the  Baseline Deployment Compliant collection as the limiting collection.
+- [ ] Deploy the application **Feature Update - Client Content** to all Windows 10 devices.
+- [ ] Deploy the Configuration Baseline **Feature Update - Inventory OSVersionHistory and SetupDiag** to all Windows 10 devices (_Set to Remediate_).
+- [ ] Deploy the Configuration Baseline **Feature Update - No Logged On User Failure** to all Windows 10 devices (_Set to Remediate_).
+- [ ] Deploy the Configuration Baseline **Feature Update - Scripts and Files Are Present** to all Windows 10 devices (_Set to Remediate_).
+- [ ] Create new Compliant collection for **Feature Update - Scripts and Files Are Present** Baseline Deployment.
+- [ ] Create new Feature Update deployment collection using the **Feature Update - Scripts and Files Are Present** Baseline Deployment Compliant collection as the limiting collection.
 - [ ] Use this new collection as your limiting collection for all Feature Update deployments. It will ensure that you don't deploy to devices without Feature Update files staged.
 
 ## Reporting
@@ -112,4 +112,4 @@ Use the Power Bi template in the Reporting folder to report on the custom invent
 [Running SetupFUFramework](https://youtu.be/8g3M_ekYvQg)  
 [Distributing and Deploying Application](https://youtu.be/9O2SJ4MOmDU)  
 [Importing MOFs](https://youtu.be/NlkJBNI8AHw)  
-[Updating and Deploying CIs and Baselines](https://youtu.be/sq74eyeNX1E)  
+[Updating and Deploying CIs and Baselines](https://youtu.be/sq74eyeNX1E) **Be sure to set the baseline deployments to Remediate. I missed that step in the video.**
