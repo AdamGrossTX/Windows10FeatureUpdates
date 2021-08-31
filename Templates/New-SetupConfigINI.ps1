@@ -122,7 +122,7 @@ $main = {
                 }
                 Catch {
                     #reading the file threw an error.  Seen this with blankish files.  Just delete it and rewrite.
-                    Remove-Item $SourceIniFile
+                    Remove-Item $SourceIniFile -force
                 }
         }
 
