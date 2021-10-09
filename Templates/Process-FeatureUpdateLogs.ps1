@@ -54,75 +54,80 @@ param (
 #region main ########################
 $main = {
 
-   #cleanup any existing logs
-    Remove-Item $TranscriptPath -Force -recurse -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
-    Start-Transcript -Path $TranscriptPath -Force -Append -NoClobber -ErrorAction Continue
+    if($TranscriptPath) {
+    #cleanup any existing logs
+        Remove-Item $TranscriptPath -Force -recurse -Confirm:$False -ErrorAction SilentlyContinue | Out-Null
+        Start-Transcript -Path $TranscriptPath -Force -Append -NoClobber -ErrorAction Continue
 
-    Try {
+        Try {
 
-        #Variables
-        $DateString = Get-Date -Format yyyyMMdd_HHmmss
-        $LocalLogRoot = Join-Path -Path $LocalFileRoot -ChildPath "Logs"
-        $LocalScriptRoot = Join-Path -Path $LocalFileRoot -ChildPath "Scripts"
+            #Variables
+            $DateString = Get-Date -Format yyyyMMdd_HHmmss
+            $LocalLogRoot = Join-Path -Path $LocalFileRoot -ChildPath "Logs"
+            $LocalScriptRoot = Join-Path -Path $LocalFileRoot -ChildPath "Scripts"
 
-        #Run SetupDiag and Parse Results
-        $Status = Process-SetupDiag -LocalLogRoot $LocalLogRoot -CallingScript $CallingScript -SkipSetupDiag:$SkipSetupDiag
+            #Run SetupDiag and Parse Results
+            $Status = Process-SetupDiag -LocalLogRoot $LocalLogRoot -CallingScript $CallingScript -SkipSetupDiag:$SkipSetupDiag
 
-        $Sources = @{
-            "MoSetup" = @{
-                SourcePath = "c:\Windows\Logs\MoSetup"
-                DestPath = $LocalLogRoot
-                DestChildFolder = "MoSetup"
-                RemoveLevel = 'Child'
+            $Sources = @{
+                "MoSetup" = @{
+                    SourcePath = "c:\Windows\Logs\MoSetup"
+                    DestPath = $LocalLogRoot
+                    DestChildFolder = "MoSetup"
+                    RemoveLevel = 'Child'
+                }
+                #Removing DISM since the logs tend to be quite large.
+                "DISM" = @{
+                    DestPath = "$($LocalLogRoot)\DISM"
+                    RemoveLevel = 'Root'
+                    RemoveOnly = $True
+                }
+                "FeatureUpdateLogs" = @{
+                    SourcePath = "C:\Windows\CCM\Logs"
+                    DestPath = $LocalLogRoot
+                    FileName = "FeatureUpdate-*.Log"
+                    RemoveLevel = 'File'
+                }
+                "SetupDiagLogs" = @{
+                    SourcePath = $LocalScriptRoot
+                    DestPath = $LocalLogRoot
+                    FileName = "SetupDiag_*.Log"
+                    RemoveLevel = 'File'
+                }
             }
-            #Removing DISM since the logs tend to be quite large.
-            "DISM" = @{
-                DestPath = "$($LocalLogRoot)\DISM"
-                RemoveLevel = 'Root'
-                RemoveOnly = $True
+
+            $OSInfo = Get-CIMInstance -Class Win32_OperatingSystem
+            Write-Host "OSInfo"
+            Write-Host "BuildNumber: $($OSInfo.BuildNumber)"
+            Write-Host "SerialNumber: $($OSInfo.SerialNumber)"
+            Write-Host "Version: $($OSInfo.Version)"
+
+            Write-Host "Panther Log Path : $($PantherLogPath)"
+            Write-Host "Setting status to: $($Status)"
+            Write-Host "SystemRoot : $($Env:SystemRoot)\logs\DISM"
+            Write-Host "Local Log Path : $($LocalLogRoot)"
+            Write-Host "Computername : $($ENV:COMPUTERNAME)"
+            Write-Host "Calling Script : $($CallingScript)"
+
+            ForEach($Key in $Sources.keys) {
+                $Args = $Sources[$Key]
+                ProcessContent @Args -ErrorAction Continue
             }
-            "FeatureUpdateLogs" = @{
-                SourcePath = "C:\Windows\CCM\Logs"
-                DestPath = $LocalLogRoot
-                FileName = "FeatureUpdate-*.Log"
-                RemoveLevel = 'File'
-            }
-            "SetupDiagLogs" = @{
-                SourcePath = $LocalScriptRoot
-                DestPath = $LocalLogRoot
-                FileName = "SetupDiag_*.Log"
-                RemoveLevel = 'File'
-            }
+
+            #Pause so that setup can exit.
+            Copy-LogsToNetwork -SourcePath $LocalLogRoot -RootDestPath $NetworkLogPath -ComputerName $ENV:COMPUTERNAME -Date $DateString -Type $Type -Status $Status -BuildNumber $OSInfo.BuildNumber -ErrorCode $Results.ErrorCode -ErrorExCode $Results.ExCode -PreAuth:$false
+
+        }
+        Catch {
+            Throw $_
         }
 
-        $OSInfo = Get-CIMInstance -Class Win32_OperatingSystem
-        Write-Host "OSInfo"
-        Write-Host "BuildNumber: $($OSInfo.BuildNumber)"
-        Write-Host "SerialNumber: $($OSInfo.SerialNumber)"
-        Write-Host "Version: $($OSInfo.Version)"
-
-        Write-Host "Panther Log Path : $($PantherLogPath)"
-        Write-Host "Setting status to: $($Status)"
-        Write-Host "SystemRoot : $($Env:SystemRoot)\logs\DISM"
-        Write-Host "Local Log Path : $($LocalLogRoot)"
-        Write-Host "Computername : $($ENV:COMPUTERNAME)"
-        Write-Host "Calling Script : $($CallingScript)"
-
-        ForEach($Key in $Sources.keys) {
-            $Args = $Sources[$Key]
-            ProcessContent @Args -ErrorAction Continue
-        }
-
-        #Pause so that setup can exit.
-        Copy-LogsToNetwork -SourcePath $LocalLogRoot -RootDestPath $NetworkLogPath -ComputerName $ENV:COMPUTERNAME -Date $DateString -Type $Type -Status $Status -BuildNumber $OSInfo.BuildNumber -ErrorCode $Results.ErrorCode -ErrorExCode $Results.ExCode -PreAuth:$false
-
+        Write-Host "Copy Logs Completed."
+        Stop-Transcript
     }
-    Catch {
-        Throw $_
+    else {
+        throw "This file wasn't built properly. Please use SetupFUFramework and try again."
     }
-
-    Write-Host "Copy Logs Completed."
-    Stop-Transcript
 
 }
 

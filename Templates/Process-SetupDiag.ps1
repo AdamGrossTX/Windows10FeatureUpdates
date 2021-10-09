@@ -36,6 +36,8 @@ Function Process-SetupDiag {
         [switch]$SkipSetupDiag,
         [switch]$SkipWriteRegKey
     )
+
+    if($LocalLogRoot -and $TranscriptPath) {
         #Set the status to the script name that called it until we process the results.
         $Status = $CallingScript
 
@@ -208,3 +210,7 @@ Function Process-SetupDiag {
         Stop-Transcript | Out-Null
         Return $Status
     }
+    else {
+        throw "This file wasn't built properly. Please use SetupFUFramework and try again."
+    }
+}
