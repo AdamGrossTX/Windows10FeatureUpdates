@@ -117,7 +117,13 @@ $main = {
 
         #Get contents of the current INI File.
         If (Test-Path -Path $SourceIniFile -ErrorAction SilentlyContinue) {
-            $CurrrentIniFileContent = Parse-IniFile -IniFile $SourceIniFile
+                Try {
+                    $CurrrentIniFileContent = Parse-IniFile -IniFile $SourceIniFile
+                }
+                Catch {
+                    #reading the file threw an error.  Seen this with blankish files.  Just delete it and rewrite.
+                    Remove-Item $SourceIniFile -force
+                }
         }
 
         #If the current file has valid content and we aren't forcing a re-write, check the contents against the expected values.
