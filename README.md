@@ -65,7 +65,7 @@ Logs are written to `c:\~FeatureUpdateTemp\Logs` and `c:\Windows\CCM\Logs`
     * SetupComplete.cmd
     * SetupDiag.exe
     * Trigger-DCMEvaluation.ps1
-* C:\Windows\System32\update\\\<GUID>
+* C:\Windows\System32\update\run\\\<GUID>
     * failure.cmd
     * postuninstall.cmd
     * precommit.cmd
