@@ -185,7 +185,7 @@ Function Process-SetupDiag {
             }
 
             If(!($SkipWriteRegKey.IsPresent)) {
-                $NewDateTime = (Get-Date).GetDateTimeFormats()[72]
+                $NewDateTime = Get-Date -Format G
                 If(Get-Item -Path $SetupDiagKeyPath -ErrorAction SilentlyContinue) {
                     If(Get-ItemProperty -Path $SetupDiagKeyPath -Name 'DateTime') {
                         New-ItemProperty -Path $SetupDiagKeyPath -Name 'DateTime' -Value $NewDateTime -PropertyType string -Force | Out-Null
